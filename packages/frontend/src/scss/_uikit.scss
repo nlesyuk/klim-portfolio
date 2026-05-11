@@ -1,0 +1,23 @@
+.btn {
+  display: block;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  border-radius: 2px;
+  cursor: pointer;
+  @include transition-default;
+  &:hover {
+    @include transition-default;
+  }
+
+  &-primary {
+    @if var(--is-black-theme) {
+      background-color: var(--background);
+      color: var(--grey);
+      text-transform: uppercase;
+    } @else {
+      background-color: rgba(var(--grey-light), 0.5);
+      color: var(--grey);
+    }
+  }
+}

@@ -1,0 +1,68 @@
+// preview works
+.work {
+  display: block;
+  width: 100%;
+  background-color: var(--grey-light);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+
+  // for Safari
+  overflow: hidden;
+  height: 0;
+  padding-top: 56.25%;
+
+  @include transition-default;
+  &:hover {
+    @include transition-default;
+    cursor: pointer;
+    .work__description {
+      @include transition-default;
+      transform: translateY(0px);
+    }
+  }
+
+  &__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__description {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: auto;
+    padding: 10px;
+    background-color: rgba(var(--background), 0.5);
+    position: absolute;
+    bottom: 0;
+
+    transform: translateY(50px);
+    word-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @include transition-default;
+
+    svg {
+      display: block;
+      fill: var(--grey);
+      fill: var(--background);
+      width: 24px;
+      position: absolute;
+      left: 10px;
+      top: calc(50% - 12px);
+    }
+  }
+
+  &__title {
+    font: 1.1rem/1.1rem $font;
+    text-decoration: none;
+    text-transform: uppercase;
+    color: var(--background);
+  }
+}

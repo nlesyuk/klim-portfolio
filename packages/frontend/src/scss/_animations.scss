@@ -1,0 +1,64 @@
+@keyframes manegaOpacity {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+// glitch animations
+@keyframes noise-anim {
+  $steps: 10;
+  @for $i from 0 through $steps {
+    #{percentage($i*(1/$steps))} {
+      clip: rect(random(100) + px, 9999px, random(100) + px, 0);
+    }
+  }
+}
+
+@keyframes noise-anim-2 {
+  $steps: 10;
+  @for $i from 0 through $steps {
+    #{percentage($i*(1/$steps))} {
+      clip: rect(random(100) + px, 9999px, random(100) + px, 0);
+    }
+  }
+}
+
+.glitch {
+  color: var(--glitch-color);
+  position: relative;
+  margin: 0 auto;
+  &:after,
+  &:before {
+    content: attr(data-text);
+    width: 100%;
+    position: absolute;
+    top: 0;
+    color: var(--glitch-color);
+    background: var(--glitch-background);
+    overflow: hidden;
+    clip: rect(0, 900px, 0, 0);
+  }
+  &:after {
+    left: 2px;
+    text-shadow: -1px 0 red;
+    animation: noise-anim 2s infinite linear alternate-reverse;
+  }
+  &:before {
+    left: -2px;
+    text-shadow: 1px 0 blue;
+    animation: noise-anim-2 3s infinite linear alternate-reverse;
+  }
+}

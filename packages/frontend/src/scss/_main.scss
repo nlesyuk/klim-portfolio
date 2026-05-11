@@ -1,0 +1,724 @@
+// put footer in the bottom of page
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  // overflow: hidden;
+}
+.content {
+  flex-grow: 1;
+  min-height: 50vh;
+}
+
+//
+.header {
+  width: 100%;
+  grid-row: 1 / span 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  padding: 26px 0 10px 0;
+  background: hsla(0, 0%, 100%, 0.9);
+  background: var(--background);
+  backdrop-filter: blur(3px);
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  &__social {
+    display: flex;
+    justify-content: space-between;
+    align-self: center;
+    width: 80px;
+    li a {
+      display: flex;
+      align-items: center;
+      padding: 0;
+      margin: 0;
+      svg {
+        padding: 0;
+        margin: 0;
+        width: 16px;
+        fill: var(--primary);
+        @include transition-default;
+        &:hover {
+          fill: var(--accent);
+          @include transition-default;
+        }
+      }
+    }
+  }
+  &__logo {
+    &-link {
+      display: block;
+      max-width: 200px;
+      margin: 0 auto;
+      &.cinematographer-active {
+        max-width: 280px;
+      }
+      img {
+        max-width: 100%;
+        filter: var(--filter-logo);
+      }
+    }
+  }
+  &__nav {
+    font-family: $font;
+    align-self: center;
+    ul {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    li:not(.vsm-section) {
+      position: relative;
+      padding-right: 30px;
+      &:last-child {
+        padding-right: 0;
+      }
+    }
+
+    // vsm menu
+    // fix bug when dropdown mobile menu is hidden
+    // but size of hidden menu have negative effect for layout
+    .vsm-background {
+      @media screen and (max-width: 1120px) and (min-width: 768px) {
+        width: auto;
+      }
+    }
+    // vsm mobile menu
+    .vsm-section_mob {
+      .vsm-mob-line,
+      .vsm-mob-close:before,
+      .vsm-mob-close:after {
+        background-color: var(--primary);
+      }
+    }
+    .vsm-mob-content {
+      left: auto;
+      right: 0;
+      width: 100%;
+      min-width: 320px;
+      max-width: 100%;
+      .vsm-mob-content__wrap {
+        .vsm-mob-content__mob-menu {
+          display: flex;
+          flex-direction: column;
+          padding: 10px 20px;
+          a {
+            text-decoration: none;
+            color: var(--primary);
+          }
+        }
+      }
+    }
+    .vsm-dropdown {
+      top: 35px !important;
+
+      // color of drop down menus
+      .header__nav-submenu,
+      .vsm-arrow,
+      .vsm-background,
+      .vsm-dropdown-content,
+      .vsm-dropdown-section,
+      .vsm-dropdown-container {
+        @if var(--is-black-theme) {
+          background-color: var(--background-accent);
+        } @else {
+          background-color: var(--background);
+        }
+      }
+    }
+
+    &-item {
+      font-size: 1.1rem;
+      height: auto;
+      line-height: 1;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--grey);
+      @include transition-default;
+
+      &.active {
+        color: var(--primary);
+        @include transition-default;
+        &:hover {
+          color: var(--accent)-bright;
+          @include transition-default;
+        }
+      }
+      &:hover {
+        color: var(--primary);
+        cursor: pointer;
+        @include transition-default;
+      }
+    }
+
+    &-submenu {
+      min-height: 0;
+      cursor: pointer;
+      ul {
+        display: block;
+      }
+      li {
+        display: block;
+        position: relative;
+      }
+      &-item {
+        display: block;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        text-decoration: none;
+        padding: 10px;
+        color: var(--grey);
+        @include transition-long;
+
+        &:hover {
+          color: var(--primary);
+          @include transition-long;
+        }
+      }
+    }
+  }
+}
+
+//
+.shots {
+  display: block;
+  &__tags {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+    .btn {
+      margin: 0 2px;
+      padding: 3px 4px;
+      font: 1.1rem/1 $font;
+      &.active {
+        color: var(--primary);
+      }
+      &:hover {
+        color: var(--primary);
+
+        @if var(--is-black-theme) {
+          background-color: var(--background)-accent;
+        } @else {
+          background-color: var(--grey-light);
+        }
+      }
+    }
+  }
+}
+
+//
+.contact {
+  &__main {
+    padding: 40px 0;
+    width: 50%;
+    min-width: 50%;
+    margin: 0 auto;
+  }
+  &__top-container {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: center;
+  }
+  &__figure {
+    width: 457px;
+    height: 509px;
+    max-width: 100%;
+    max-height: 100%;
+    margin-left: auto;
+    background: var(--base-gradient);
+    width: 100%;
+    height: auto;
+  }
+  &__img {
+    display: block;
+    width: 100%;
+  }
+  &__info {
+    width: 200px;
+    width: 100%;
+  }
+  &__text {
+    display: block;
+    font: 1.1rem/1 $font;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--primary);
+    margin-bottom: 50px;
+    a {
+      display: block;
+      text-decoration: none;
+      color: var(--primary);
+      margin-top: 10px;
+      @include transition-default;
+      &:hover {
+        color: var(--accent);
+        @include transition-default;
+      }
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  &__social {
+    display: block;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-self: center;
+    width: 120px;
+    margin-bottom: 10px;
+    li a svg {
+      width: 18px;
+      fill: var(--primary);
+      @include transition-default;
+      &:hover {
+        fill: var(--accent);
+        @include transition-default;
+      }
+    }
+  }
+  &__description {
+    padding-top: 40px;
+    font-family: $font;
+    font-size: 1.6rem;
+    line-height: 1.2;
+    color: var(--grey);
+    @include reset-vue2editor;
+
+    * {
+      @include reset-vue2editor-uppercase;
+    }
+  }
+  // calendar
+  iframe {
+    display: block;
+    width: 100%;
+  }
+
+  @media (max-width: 1500px) {
+    &__main {
+      width: 80%;
+    }
+  }
+  @media (max-width: 992px) {
+    //
+    .contact {
+      &__main {
+        width: 100%;
+      }
+      &__top-container {
+        grid-template-columns: repeat(1, 1fr);
+      }
+      &__figure {
+        width: 100%;
+        height: auto;
+        margin-left: 0;
+        background: transparent;
+      }
+      &__img {
+        width: 100%;
+        max-width: 100%;
+      }
+      &__info {
+        width: 100%;
+        max-width: 100%;
+        padding-left: 0;
+        margin: 0 auto;
+        margin-top: 40px;
+      }
+      &__text {
+        font: 1.5rem/1 $font;
+        margin-bottom: 50px;
+        a {
+          margin-top: 10px;
+        }
+      }
+      &__social {
+        width: 120px;
+        li a svg {
+          width: 18px;
+        }
+      }
+
+      iframe {
+        display: block;
+        width: 100%;
+      }
+    }
+  }
+}
+
+//
+.photos {
+  &__preview {
+    display: block;
+    width: 100%;
+  }
+  &__title {
+    font-size: 1.6rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    line-height: 1;
+    padding: 24px 0 16px;
+    color: var(--grey);
+  }
+  &__description,
+  &__credits {
+    font-family: $font;
+    font-size: 1.6rem;
+    line-height: 1.2;
+    color: var(--grey);
+    @include reset-vue2editor;
+  }
+  &__description {
+    padding: 8px 0 24px;
+    font-size: 1.2rem;
+  }
+  &__credits {
+    padding: 26px 0;
+  }
+}
+
+//
+.works {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 4px;
+}
+//
+.work-page {
+  &__title {
+    padding: 26px 0;
+    font: bold 1.6rem/1 $font;
+    color: var(--grey);
+    margin-bottom: 16px;
+  }
+  &__description {
+    font: 1.6rem/1.2 $font;
+    color: var(--grey);
+    margin-bottom: 26px;
+    * {
+      @include reset-vue2editor-uppercase;
+    }
+  }
+  &__credits {
+    font: 1.6rem/1.2 $font;
+    padding: 26px 0;
+    color: var(--grey);
+    // @include reset-vue2editor;
+    * {
+      @include reset-vue2editor-uppercase;
+    }
+  }
+}
+
+//
+.slider {
+  position: relative;
+  margin-bottom: 20px;
+
+  &__slide {
+    display: block;
+    width: 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: black;
+    cursor: pointer;
+    position: relative;
+    .vimeo__play {
+      position: relative;
+      z-index: 1;
+    }
+    &-btn {
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      background-color: var(--primary);
+      text-align: center;
+      color: honeydew;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      z-index: 15;
+      pointer-events: none;
+      @include transition-default;
+      &:hover {
+        background-color: white;
+        color: var(--primary);
+        @include transition-default;
+      }
+    }
+  }
+  &__img {
+    display: block;
+    width: 100%;
+    // object-fit: fill;
+  }
+  &__btn-more {
+    position: absolute;
+    top: calc(50% - 10px);
+    left: calc(50% - 10px);
+  }
+}
+.hooper {
+  &:hover {
+    .hooper-indicators,
+    .hooper-prev,
+    .hooper-next {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .slider__slide-btn {
+      top: 30px;
+      pointer-events: auto;
+    }
+  }
+
+  &-indicators {
+    opacity: 0;
+    @include transition-default;
+  }
+  &-indicator {
+    background-color: black;
+    &.is-active {
+      background-color: grey;
+    }
+  }
+
+  &-prev,
+  &-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 50px;
+    padding: 0;
+    background-color: black;
+    opacity: 0;
+    pointer-events: none;
+    @include transition-default;
+    svg {
+      display: block;
+      fill: white;
+      transform: scale(1.5);
+    }
+    &:hover {
+      cursor: pointer;
+      filter: invert(100%);
+      @include transition-default;
+    }
+    &:is(.is-disabled) {
+      cursor: not-allowed;
+      filter: none;
+    }
+  }
+}
+//
+.not-found {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 50vh;
+  &__code {
+    display: block;
+    box-sizing: border-box;
+    width: 200px;
+    max-width: 100%;
+    font: bold 120px/1 $font;
+    text-align: center;
+    color: var(--glitch-color);
+    margin-bottom: 20px;
+  }
+  &__text {
+    font: bold 30px/1 $font;
+    text-align: center;
+    color: var(--glitch-color);
+  }
+}
+
+//
+.footer {
+  padding: 50px 0 20px 0;
+  opacity: 0.5;
+  &__social {
+    display: block;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-self: center;
+    width: 120px;
+    margin-bottom: 20px;
+    li a svg {
+      width: 18px;
+      fill: var(--primary);
+      @include transition-default;
+      &:hover {
+        fill: var(--accent);
+        @include transition-default;
+      }
+    }
+  }
+  &__text {
+    font: 1.1rem/1 $font;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 10px;
+    a {
+      color: var(--primary);
+      text-decoration: none;
+      @include transition-default;
+      &:hover {
+        color: var(--accent);
+        @include transition-default;
+      }
+    }
+  }
+}
+
+.calendar {
+  display: flex;
+  justify-content: center;
+  iframe {
+    display: block;
+    width: 100%;
+  }
+}
+
+//
+.login {
+  min-height: 50vh;
+  margin-top: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &__profile-img {
+    display: block;
+    max-width: 80px;
+    margin: 0 auto;
+    border-radius: 50%;
+    margin-bottom: 32px;
+  }
+  &__form {
+    width: 320px;
+    max-width: 100%;
+    background-color: var(--login-background);
+    margin: 0 auto;
+    border-radius: 8px;
+    padding: 3.5rem;
+    box-shadow: rgb(204, 219, 232) 3px 3px 6px 0px inset,
+      rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset;
+  }
+  &__label {
+    display: block;
+    margin-bottom: 16px;
+    span {
+      display: block;
+      padding: 0.5rem;
+    }
+    input {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 1.25rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      color: rgb(137, 137, 137);
+    }
+  }
+  &__btn {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 1.5rem;
+    border: none;
+    background-color: rgb(205, 205, 205);
+    border: 1px solid rgb(199, 199, 199);
+    color: white;
+    color: rgb(110, 110, 110);
+    font-weight: 500;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    &:hover {
+      transition: all 0.25s;
+      opacity: 0.75ss;
+      background-color: rgb(136, 136, 136);
+      color: black;
+    }
+  }
+  &__error {
+    display: block;
+    width: 100%;
+    font-size: 1.25rem;
+    padding: 8px 0;
+    text-align: center;
+    background-color: #f6e5e6;
+    color: #6d4044;
+    margin-top: 8px;
+    border: 1px solid #eddedf;
+    border-radius: 4px;
+    cursor: default;
+  }
+}
+
+////////////////////// MEDIA //////////////////////
+@media (max-width: 992px) {
+  //
+  .home {
+    .works {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  //
+  .work-page {
+    &__text {
+      font-size: 1.6rem;
+      padding: 16px 0;
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 8px;
+      }
+      p {
+        font-size: 1rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  //
+  .home {
+    .works {
+      grid-template-columns: repeat(1, 1fr);
+    }
+  }
+
+  //
+  .header {
+    grid-template-columns: 1fr 2fr 1fr;
+  }
+}
+@media (max-width: 420px) {
+  //
+  .header {
+    &__logo {
+      &-link {
+        img {
+          max-width: 90%;
+          margin: 0 auto;
+        }
+      }
+    }
+  }
+}

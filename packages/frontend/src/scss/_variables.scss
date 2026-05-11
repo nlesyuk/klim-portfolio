@@ -1,0 +1,59 @@
+// it's not good solution to fetch fonts from css file
+@import url("https://fonts.googleapis.com/css2?family=Julius+Sans+One:wght@400,500,600,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Encode+Sans+Condensed:wght@100,400,500,600,700&display=swap");
+
+$font: "Julius Sans One", sans-serif;
+$secondFont: "Encode Sans Condensed", sans-serif;
+
+// back office
+$error-yellow: #f7cb41;
+$error-black: #242227;
+
+$media-lg: 1600px;
+$media-md: 1200px;
+$media-sm: 992px;
+
+$btn-primary: #3081fb;
+$btn-primary-hover: #8fbcff;
+$btn-submit: #06c4e1;
+$btn-submit-hover: #1cdefb;
+
+:root {
+  --base-gradient: linear-gradient(327deg, #f9f9f9 0%, #f9f9f9 100%);
+  --grey-light: #f8f8f8;
+  // login
+  --login-background: var(--grey-light);
+}
+
+// front office
+[theme="light"] {
+  --is-black-theme: false;
+  --primary: black;
+  --grey: #c0c0c0;
+
+  --accent: #c0c0c0;
+  --accent-bright: red;
+  --background: white;
+  --background-accent: white;
+  --filter-logo: invert(0);
+
+  // glitch
+  --glitch-color: --primary;
+  --glitch-background: --background;
+}
+
+[theme="dark"] {
+  // dark
+  --is-black-theme: true;
+  --primary: #ccc;
+  --grey: #c0c0c0;
+  --accent: #c0c0c0;
+  --accent-bright: red;
+  --background: #333;
+  --background-accent: #444;
+  --filter-logo: invert(1);
+
+  // glitch
+  --glitch-color: --primary;
+  --glitch-background: --background;
+}

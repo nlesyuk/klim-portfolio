@@ -1,0 +1,58 @@
+@mixin placeholder {
+  &::-webkit-input-placeholder {
+    @content;
+  }
+  &:-moz-placeholder {
+    @content;
+  }
+  &::-moz-placeholder {
+    @content;
+  }
+  &:-ms-input-placeholder {
+    @content;
+  }
+}
+/*
+& + placeholder{}
+@include placeholder {
+    font-style:italic;
+    color: white;
+    font-weight:100;
+} */
+
+@mixin transition-default {
+  transition: all 0.25s;
+}
+
+@mixin transition-long {
+  transition: all 2.25s;
+}
+
+@mixin reset-vue2editor {
+  a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    @include transition-default;
+    &:hover {
+      color: var(--accent);
+      @include transition-default;
+    }
+  }
+  u,
+  s {
+    text-decoration: none;
+  }
+  img {
+    display: block;
+    max-width: 100%;
+    width: 255px;
+  }
+}
+
+@mixin reset-vue2editor-uppercase {
+  font: 1.2rem/1.25 $font !important;
+  color: var(--grey) !important;
+  text-transform: uppercase !important;
+  background-color: transparent !important;
+}

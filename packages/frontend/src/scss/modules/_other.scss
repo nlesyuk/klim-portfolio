@@ -1,0 +1,60 @@
+// VimeoVideoPlayer component
+.vimeo {
+  padding: 0 19%;
+  background-color: black;
+  position: relative;
+
+  &__poster {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+  }
+  &__play {
+    cursor: pointer;
+  }
+
+  .vimeoPlayer-hidden {
+    z-index: -1;
+  }
+}
+
+@media (max-width: 992px) {
+  // VimeoVideoPlayer component
+  .vimeo {
+    padding: 0;
+  }
+}
+
+// PhotoPreview component
+.photo-preview {
+  display: block;
+  text-decoration: none;
+  @include transition-default;
+  position: relative;
+  &:hover {
+    // filter: hue-rotate(-10deg);
+    // filter: grayscale(1);
+    @include transition-default;
+  }
+  &__title {
+    display: block;
+    padding: 20px 0;
+    font: bold 1.6rem/1 $font;
+    text-transform: uppercase;
+    color: var(--primary);
+    color: var(--grey);
+    margin-bottom: 30px;
+    text-decoration: none;
+    @include transition-default;
+  }
+}
