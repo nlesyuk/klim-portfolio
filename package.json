@@ -1,0 +1,14 @@
+{
+  "name": "klim-portfolio-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/backend",
+    "packages/frontend"
+  ],
+  "scripts": {
+    "backend": "npm run dev --workspace=packages/backend",
+    "frontend": "npm run serve --workspace=packages/frontend",
+    "lint": "npm run lint --workspaces"
+  }
+}
