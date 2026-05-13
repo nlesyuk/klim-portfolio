@@ -14,37 +14,25 @@
     <Spiner v-else />
   </div>
 </template>
-<script>
-import PhotoPreview from "../components/PhotoPreview";
-import { mapActions, mapState, mapGetters } from "vuex";
+
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import PhotoPreview from "@/components/PhotoPreview.vue";
+import Spiner from "@/components/Spiner.vue";
+import { usePhotosStore } from "@/stores/photos";
 import { isCinematographerMode } from "@/helper/constants";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotoPreview
-  },
-  computed: {
-    ...mapState({
-      allPhotos: state => state.photos.photos
-    }),
-    ...mapGetters(["photographerPhotos", "cinematographerPhotos"]),
-    photos() {
-      return isCinematographerMode
-        ? this.cinematographerPhotos
-        : this.photographerPhotos;
-    }
-  },
-  methods: {
-    ...mapActions(["getPhotos"])
-  },
-  created() {
-    if (!this.allPhotos) {
-      this.getPhotos();
-    }
-  },
-  mounted() {
-    setTitle("Photos");
-  }
-};
+const photosStore = usePhotosStore();
+
+const photos = computed(() =>
+  isCinematographerMode
+    ? photosStore.cinematographerPhotos
+    : photosStore.photographerPhotos
+);
+
+onMounted(() => {
+  setTitle("Photos");
+  if (!photosStore.photos) photosStore.getPhotos();
+});
 </script>

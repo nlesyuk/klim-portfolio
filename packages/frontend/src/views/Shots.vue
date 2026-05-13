@@ -11,14 +11,9 @@
         {{ name }}
       </button>
     </div>
-
     <transition name="fade" mode="out-in">
       <template v-if="toggle">
-        <PhotosGrid
-          v-if="filteredShots.length"
-          :images="filteredShots"
-          :is-shots="true"
-        />
+        <PhotosGrid v-if="filteredShots.length" :images="filteredShots" :is-shots="true" />
         <p v-else-if="filteredShots.length === 0" class="home__empty-category">
           Don't have any shots yet
         </p>
@@ -27,75 +22,51 @@
     </transition>
   </div>
 </template>
-<script>
-import PhotosGrid from "../components/PhotosGrid";
-import { mapActions, mapState } from "vuex";
+
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import PhotosGrid from "@/components/PhotosGrid.vue";
+import Spiner from "@/components/Spiner.vue";
+import { useShotsStore } from "@/stores/shots";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotosGrid
-  },
-  data() {
-    return {
-      toggle: true, // for relaunch gridPhotos component when change filter
-      filteredShots: []
-    };
-  },
-  computed: {
-    filter() {
-      return this.$route.query.filter;
-    },
-    ...mapState({
-      allShots: state => state.shots.shots,
-      categories: state => state.shots.categories
-    }),
-    sortedFilteredShots() {
-      return [...this.filteredShots].sort((a, b) => b.id - a.id);
-    }
-  },
-  watch: {
-    $route(route) {
-      const filter = route.query.filter;
-      this.applyFilter(filter);
-    }
-  },
-  methods: {
-    ...mapActions(["getAllShots"]),
-    init() {
-      if (!this.allShots.length) {
-        this.getAllShots().then(data => {
-          this.filteredShots = data;
+const route = useRoute();
+const router = useRouter();
+const shotsStore = useShotsStore();
 
-          // apply filter if exist in route
-          const filter = this.$route?.query?.filter;
-          if (filter) {
-            this.applyFilter(filter);
-          }
-        });
-      }
-      this.filteredShots = this.allShots;
-    },
-    changeFilter(filter) {
-      this.toggle = false;
-      if (this.$route.query.filter !== filter) {
-        this.$router.replace({ name: "shots", query: { filter } });
-        this.applyFilter(filter);
-        setTimeout(() => {
-          this.toggle = true;
-        }, 300);
-      }
-    },
-    applyFilter(key) {
-      this.filteredShots =
-        key === "all"
-          ? this.allShots
-          : this.allShots.filter(item => item.categories.includes(key));
-    }
-  },
-  mounted() {
-    setTitle("Shots");
-    this.init();
+const toggle = ref(true);
+const filteredShots = ref<unknown[]>([]);
+
+const filter = computed(() => route.query.filter as string | undefined);
+const categories = computed(() => shotsStore.categories);
+
+watch(route, (r) => { applyFilter(r.query.filter as string | undefined); });
+
+function applyFilter(key: string | undefined) {
+  const all = shotsStore.shots as Record<string, unknown>[];
+  filteredShots.value = key === "all" || !key
+    ? all
+    : all.filter((item) => (item.categories as string[]).includes(key));
+}
+
+function changeFilter(f: string) {
+  toggle.value = false;
+  if (route.query.filter !== f) {
+    router.replace({ name: "shots", query: { filter: f } });
+    applyFilter(f);
+    setTimeout(() => { toggle.value = true; }, 300);
   }
-};
+}
+
+onMounted(async () => {
+  setTitle("Shots");
+  if (!shotsStore.shots.length) {
+    const data = await shotsStore.getAllShots();
+    filteredShots.value = data ?? [];
+    if (filter.value) applyFilter(filter.value);
+  } else {
+    filteredShots.value = shotsStore.shots as unknown[];
+  }
+});
 </script>

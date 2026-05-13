@@ -1,115 +1,79 @@
 <template>
   <section class="dashboard-shots">
-    <button
-      type="button"
-      class="dashboard__btn"
-      @click="isShowAddShot = !isShowAddShot"
-    >
-      Add shot
-    </button>
+    <button type="button" class="dashboard__btn" @click="isShowAddShot = !isShowAddShot">Add shot</button>
     <ShotAdd v-if="isShowAddShot" />
-
-    <ShotEdit
-      v-if="isEdit"
-      :shot="editedShot"
-      :videos="videos"
-      @close="closeEdit"
-    />
-
-    <button type="button" @click="refresh" class="dashboard__btn">
-      Refresh shots
-    </button>
-
+    <ShotEdit v-if="isEdit" :shot="editedShot" :videos="videos" @close="closeEdit" />
+    <button type="button" @click="refresh" class="dashboard__btn">Refresh shots</button>
     <PhotosGridShots
       v-if="sortedFilteredPhotos"
       :images="sortedFilteredPhotos"
       :isManage="true"
       @removeImg="remove"
       @editImg="edit"
-    ></PhotosGridShots>
+    />
     <Spiner v-else />
   </section>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
 import ShotAdd from "./ShotAdd.vue";
 import ShotEdit from "./ShotEdit.vue";
-import PhotosGridShots from "../../components/PhotosGridShots";
-import { mapState, mapActions } from "vuex";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
+import PhotosGridShots from "@/components/PhotosGridShots.vue";
+import Spiner from "@/components/Spiner.vue";
+import { useShotsStore } from "@/stores/shots";
+import { useVideosStore } from "@/stores/videos";
+import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+
 const ShotRepository = RepositoryFactory.get("shots");
+const shotsStore = useShotsStore();
+const videosStore = useVideosStore();
 
-export default {
-  components: {
-    PhotosGridShots,
-    ShotAdd,
-    ShotEdit
-  },
-  data() {
-    return {
-      isLoading: false,
-      isEdit: false,
-      editedShot: null,
-      isShowAddShot: false,
-      filteredPhotos: []
-    };
-  },
-  computed: {
-    ...mapState({
-      videos: state => state.videos.videos,
-      allPhotos: state => state.shots.shots
-    }),
-    sortedFilteredPhotos() {
-      return [...this.filteredPhotos].sort((a, b) => b.id - a.id);
-    }
-  },
-  methods: {
-    ...mapActions(["getAllShots", "getAllVideos"]),
-    refresh() {
-      this.getAllShots();
-    },
-    async remove(id) {
-      try {
-        this.isLoading = true;
-        this.filteredPhotos = this.filteredPhotos.filter(v => v.id != id);
-        await ShotRepository.delete(id);
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error("REMOVE ERROR", e);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    edit(id) {
-      window.scroll({
-        top: 0,
-        left: 0,
-        behavior: "smooth"
-      });
-      this.isEdit = true;
-      const finded = this.filteredPhotos.filter(v => v.id === id);
-      this.editedShot = finded?.length ? finded[0] : null;
-    },
+const isLoading = ref(false);
+const isEdit = ref(false);
+const editedShot = ref<unknown>(null);
+const isShowAddShot = ref(false);
+const filteredPhotos = ref<unknown[]>([]);
 
-    closeEdit() {
-      this.isEdit = false;
-    }
-  },
-  async mounted() {
-    try {
-      if (!this.allPhotos.length) {
-        const { data } = await this.getAllShots();
-        this.filteredPhotos = data;
-      }
-      this.filteredPhotos = this.allPhotos;
+const videos = computed(() => videosStore.videos);
+const sortedFilteredPhotos = computed(() =>
+  [...filteredPhotos.value].sort((a, b) => (b as Record<string, unknown>).id as number - ((a as Record<string, unknown>).id as number))
+);
 
-      if (!this.videos) {
-        this.getAllVideos();
-      }
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(err);
-    }
+function refresh() { shotsStore.getAllShots(); }
+
+async function remove(id: unknown) {
+  try {
+    isLoading.value = true;
+    filteredPhotos.value = filteredPhotos.value.filter((v) => (v as Record<string, unknown>).id !== id);
+    await ShotRepository.delete(id);
+  } catch (e) {
+    console.error("REMOVE ERROR", e);
+  } finally {
+    isLoading.value = false;
   }
-};
+}
+
+function edit(id: unknown) {
+  window.scroll({ top: 0, left: 0, behavior: "smooth" });
+  isEdit.value = true;
+  const found = filteredPhotos.value.filter((v) => (v as Record<string, unknown>).id === id);
+  editedShot.value = found?.length ? found[0] : null;
+}
+
+function closeEdit() { isEdit.value = false; }
+
+onMounted(async () => {
+  try {
+    const shots = shotsStore.shots as unknown[];
+    if (!shots.length) {
+      const data = await shotsStore.getAllShots();
+      filteredPhotos.value = data ?? [];
+    }
+    filteredPhotos.value = shotsStore.shots as unknown[];
+    if (!videosStore.videos) videosStore.getAllVideos();
+  } catch (err) {
+    console.error(err);
+  }
+});
 </script>

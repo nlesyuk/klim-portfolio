@@ -115,7 +115,7 @@ Tackle in this order — least to most risky:
 
 ---
 
-## Phase 4 — Component migration: Options API → `<script setup lang="ts">` (≈5–7 days) 🔄 IN PROGRESS
+## Phase 4 — Component migration: Options API → `<script setup lang="ts">` (≈5–7 days) ✅ DONE
 
 Migrate in dependency order (leaves first) so parents land on already-converted children.
 
@@ -128,10 +128,10 @@ Migrate in dependency order (leaves first) so parents land on already-converted 
 ### Batch 3 — Nav & header ✅ DONE
 `Header.vue`, `Nav.vue`, `dropdowns/ShotsSubmenu.vue`, `dropdowns/PhotosSubmenu.vue`, `dropdowns/PortfolioSubmenu.vue`
 
-### Batch 4 — Public views ⬜ TODO
-`App.vue`, `Main.vue`, `Work.vue`, `Shots.vue`, `Photo.vue`, `Photos.vue`, `Portfolio.vue`, `Personal.vue`, `Contact.vue`, `Login.vue`, `Slider.vue` (needs Swiper 11), `PhotographerMain.vue`, `CinematogapherMain.vue`, `Calendar.vue`
+### Batch 4 — Public views ✅ DONE
+`App.vue`, `Main.vue`, `Work.vue`, `Shots.vue`, `Photo.vue`, `Photos.vue`, `Portfolio.vue`, `Personal.vue`, `Contact.vue`, `Login.vue`, `Slider.vue`, `PhotographerMain.vue`, `CinematogapherMain.vue`, `Calendar.vue`
 
-### Batch 5 — Dashboard (most logic, do last) ⬜ TODO
+### Batch 5 — Dashboard ✅ DONE
 `dashboard/Dashboard.vue`, `dashboard/Contacts.vue`, `dashboard/PhotoAdd.vue`, `dashboard/Photos.vue`, `dashboard/ShotAdd.vue`, `dashboard/ShotEdit.vue`, `dashboard/Shots.vue`, `dashboard/SlideAdd.vue`, `dashboard/Slider.vue`, `dashboard/TheDashboardNav.vue`, `dashboard/ThemeToggle.vue`, `dashboard/WorkAdd.vue`, `dashboard/Works.vue`
 
 ### Per-file conversion checklist

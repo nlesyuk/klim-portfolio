@@ -8,51 +8,33 @@
         :collectionType="idx % 2 ? 'left' : 'right'"
       />
     </template>
-    <p
-      v-else-if="allPhotos && allPhotos.length === 0"
-      class="home__empty-category"
-    >
+    <p v-else-if="allPhotos && allPhotos.length === 0" class="home__empty-category">
       Don't have any photo collections yet
     </p>
     <Spiner v-else />
   </div>
 </template>
 
-<script>
-import PhotoPreview from "../components/PhotoPreview";
-import { mapActions, mapState } from "vuex";
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import PhotoPreview from "@/components/PhotoPreview.vue";
+import Spiner from "@/components/Spiner.vue";
+import { usePhotosStore } from "@/stores/photos";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotoPreview
-  },
-  computed: {
-    ...mapState({
-      photos: state => state.photos.photos
-    }),
-    allPhotos() {
-      const category = this.$route?.query?.filter;
-      if (category === "all" || !category) {
-        return this.photos;
-      }
+const route = useRoute();
+const photosStore = usePhotosStore();
 
-      const filtered = this.photos?.filter(item =>
-        item?.categories?.includes(category)
-      );
+const allPhotos = computed(() => {
+  const photos = photosStore.photos as Record<string, unknown>[] | null;
+  const category = route.query.filter as string | undefined;
+  if (category === "all" || !category) return photos;
+  return photos?.filter((item) => (item.categories as string[] | undefined)?.includes(category)) ?? photos;
+});
 
-      return filtered || this.photos;
-    }
-  },
-  methods: {
-    ...mapActions(["getPhotos"])
-  },
-  mounted() {
-    setTitle("Portfolio");
-
-    if (!this.photos) {
-      this.getPhotos();
-    }
-  }
-};
+onMounted(() => {
+  setTitle("Portfolio");
+  if (!photosStore.photos) photosStore.getPhotos();
+});
 </script>

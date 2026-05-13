@@ -1,66 +1,41 @@
 <template>
   <div class="home">
     <Slider />
-    <PhotosPreviewGrid
-      v-if="allPhotos && allPhotos.length"
-      :photos="allPhotos"
-    ></PhotosPreviewGrid>
-    <p
-      v-else-if="allPhotos && allPhotos.length === 0"
-      class="home__empty-category"
-    >
+    <PhotosPreviewGrid v-if="allPhotos && allPhotos.length" :photos="allPhotos" />
+    <p v-else-if="allPhotos && allPhotos.length === 0" class="home__empty-category">
       Don't have any photo collections yet
     </p>
     <Spiner v-else />
   </div>
 </template>
 
-<script>
-import PhotosPreviewGrid from "../components/PhotosPreviewGrid";
-import Slider from "./Slider";
-import { mapActions, mapState } from "vuex";
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import PhotosPreviewGrid from "@/components/PhotosPreviewGrid.vue";
+import Slider from "@/views/Slider.vue";
+import Spiner from "@/components/Spiner.vue";
+import { usePhotosStore } from "@/stores/photos";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotosPreviewGrid,
-    Slider
-  },
-  computed: {
-    ...mapState({
-      photos: state => state.photos.photos
-    }),
-    allPhotos() {
-      const category = this.$route?.query?.filter;
+const route = useRoute();
+const photosStore = usePhotosStore();
 
-      const filtered = {
-        all: this.photos,
-        automotive: this.photos?.filter(item =>
-          item?.categories?.includes("automotive")
-        ),
-        fashion: this.photos?.filter(item =>
-          item?.categories?.includes("fashion")
-        ),
-        lifestyle: this.photos?.filter(item =>
-          item?.categories?.includes("lifestyle")
-        ),
-        personal: this.photos?.filter(item =>
-          item?.categories?.includes("personal")
-        )
-      };
+const allPhotos = computed(() => {
+  const photos = photosStore.photos as Record<string, unknown>[] | null;
+  const category = route.query.filter as string | undefined;
+  const filtered: Record<string, Record<string, unknown>[] | null | undefined> = {
+    all: photos,
+    automotive: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("automotive")),
+    fashion: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("fashion")),
+    lifestyle: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("lifestyle")),
+    personal: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("personal")),
+  };
+  return filtered[category ?? ""] ?? photos;
+});
 
-      return filtered[category] || this.photos;
-    }
-  },
-  methods: {
-    ...mapActions(["getPhotos"])
-  },
-  mounted() {
-    setTitle("Portfolio");
-
-    if (!this.photos) {
-      this.getPhotos();
-    }
-  }
-};
+onMounted(() => {
+  setTitle("Portfolio");
+  if (!photosStore.photos) photosStore.getPhotos();
+});
 </script>

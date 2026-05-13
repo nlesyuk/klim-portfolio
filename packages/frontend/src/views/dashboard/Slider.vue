@@ -1,9 +1,6 @@
 <template>
   <section class="dashboard-slider">
-    <button class="dashboard__btn" @click="isShowAddSlide = !isShowAddSlide">
-      Add slide
-    </button>
-
+    <button class="dashboard__btn" @click="isShowAddSlide = !isShowAddSlide">Add slide</button>
     <SlideAdd
       v-if="isShowAddSlide"
       :isEdit="isEdit"
@@ -11,102 +8,68 @@
       :slides="slides"
       :works="videos"
       :photos="photos"
-    ></SlideAdd>
-
-    <button type="button" @click="onRefresh" class="dashboard__btn">
-      Refresh slides
-    </button>
-
+    />
+    <button type="button" @click="onRefresh" class="dashboard__btn">Refresh slides</button>
     <Slides
       v-if="sortedSlides && sortedSlides.length"
       :slides="sortedSlides"
       @delete="onDelete"
       @edit="onEdit"
-    ></Slides>
-    <div
-      v-else-if="sortedSlides && sortedSlides.length === 0"
-      class="grid-empty"
-    >
+    />
+    <div v-else-if="sortedSlides && sortedSlides.length === 0" class="grid-empty">
       Don't have any items yet
     </div>
-
     <Spiner v-else />
   </section>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
 import SlideAdd from "./SlideAdd.vue";
-import Slides from "../../components/Slides.vue";
-import { mapState, mapActions } from "vuex";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
+import Slides from "@/components/Slides.vue";
+import Spiner from "@/components/Spiner.vue";
+import { useSlidesStore } from "@/stores/slides";
+import { useVideosStore } from "@/stores/videos";
+import { usePhotosStore } from "@/stores/photos";
+import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+
 const SlidesRepository = RepositoryFactory.get("slides");
+const slidesStore = useSlidesStore();
+const videosStore = useVideosStore();
+const photosStore = usePhotosStore();
 
-export default {
-  components: {
-    Slides,
-    SlideAdd
-  },
-  data() {
-    return {
-      slide: null,
-      isEdit: false,
-      isShowAddSlide: false
-    };
-  },
-  computed: {
-    ...mapState({
-      slides: state => state.slides.slides,
-      videos: state => state.videos.videos,
-      photos: state => state.photos.photos
-    }),
-    sortedSlides() {
-      const slides = this.slides;
-      if (slides) {
-        const sorted = slides.sort((a, b) => b.order - a.order); // new add to the begin
-        // const sorted = slides.sort((a, b) => a.order - b.order); // new add to the end
-        return sorted;
-      }
-      return slides;
-    }
-  },
-  methods: {
-    ...mapActions(["getSlides", "getAllVideos", "getPhotos"]),
-    getPreviewImg(item) {
-      const filtered = item.photos.filter(v => v.isVideoPreview);
-      return filtered && filtered.length ? filtered[0].src : false;
-    },
-    onDelete(id) {
-      SlidesRepository.delete(id)
-        .then(() => {
-          this.getSlides(); // not good, TODO: remove item from store with mutation
-        })
-        .catch(err => {
-          // eslint-disable-next-line no-console
-          console.error(err);
-        });
-    },
-    onRefresh() {
-      this.getSlides();
-    },
+const slide = ref<unknown>(null);
+const isEdit = ref(false);
+const isShowAddSlide = ref(false);
 
-    // edit
-    onEdit(id) {
-      this.isEdit = true;
-      const item = this.slides?.filter(v => v.id === id);
-      this.slide = item?.length ? item[0] : null;
-      this.isShowAddSlide = true; // we use the AddSlide form for edit a work
-    }
-  },
-  created() {
-    if (!this.slides) {
-      this.getSlides();
-    }
-    if (!this.videos) {
-      this.getAllVideos();
-    }
-    if (!this.photos) {
-      this.getPhotos();
-    }
-  }
-};
+const slides = computed(() => slidesStore.slides as Record<string, unknown>[] | null);
+const videos = computed(() => videosStore.videos as Record<string, unknown>[] | null);
+const photos = computed(() => photosStore.photos as Record<string, unknown>[] | null);
+
+const sortedSlides = computed(() => {
+  const s = slides.value;
+  if (!s) return s;
+  return [...s].sort((a, b) => (b.order as number) - (a.order as number));
+});
+
+function onRefresh() { slidesStore.getSlides(); }
+
+function onDelete(id: unknown) {
+  SlidesRepository.delete(id)
+    .then(() => slidesStore.getSlides())
+    .catch((err: unknown) => console.error(err));
+}
+
+function onEdit(id: unknown) {
+  isEdit.value = true;
+  const item = slides.value?.filter((v) => v.id === id);
+  slide.value = item?.length ? item[0] : null;
+  isShowAddSlide.value = true;
+}
+
+onMounted(() => {
+  if (!slidesStore.slides) slidesStore.getSlides();
+  if (!videosStore.videos) videosStore.getAllVideos();
+  if (!photosStore.photos) photosStore.getPhotos();
+});
 </script>

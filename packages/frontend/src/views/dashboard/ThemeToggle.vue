@@ -16,35 +16,19 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, watch } from "vue";
 import { themes } from "@/helper";
 
 const defaultProp = "not choosed";
 
-export default {
-  props: {
-    currentTheme: {
-      type: String,
-      default: defaultProp,
-      validator(value) {
-        return [...themes, defaultProp].includes(value);
-      }
-    }
-  },
-  data() {
-    return {
-      theme: "light"
-    };
-  },
-  watch: {
-    theme(value) {
-      this.$emit("onThemeChange", value);
-    },
-    currentTheme(value) {
-      if (value != defaultProp) {
-        this.theme = value;
-      }
-    }
-  }
-};
+const props = withDefaults(defineProps<{ currentTheme?: string }>(), { currentTheme: defaultProp });
+const emit = defineEmits<{ onThemeChange: [value: string] }>();
+
+const theme = ref("light");
+
+watch(theme, (value) => { emit("onThemeChange", value); });
+watch(() => props.currentTheme, (value) => {
+  if (value && value !== defaultProp) theme.value = value;
+});
 </script>

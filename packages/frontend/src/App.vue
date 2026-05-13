@@ -12,34 +12,31 @@
   </main>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import { computed, watch, onMounted, defineAsyncComponent } from "vue";
 import Header from "./components/Header.vue";
 import Footer from "./components/Footer.vue";
 import SvgSprite from "./components/SVG-sprite.vue";
-import { mapGetters } from "vuex";
+import { useAuthStore } from "@/stores/auth";
+import { useGeneralStore } from "@/stores/general";
 import { themeInstance, themes } from "@/helper";
 
-export default {
-  computed: {
-    ...mapGetters("auth", ["loggedIn"]),
-    ...mapGetters(["theme"])
-  },
-  watch: {
-    theme(themeName) {
-      if (themes.includes(themeName)) {
-        themeInstance.setInLS(themeName);
-        themeInstance.init();
-      }
+const TheDashboardNav = defineAsyncComponent(() => import("./views/dashboard/TheDashboardNav.vue"));
+
+const authStore = useAuthStore();
+const generalStore = useGeneralStore();
+
+const loggedIn = computed(() => authStore.loggedIn);
+
+watch(
+  () => generalStore.theme,
+  (themeName) => {
+    if (themeName && themes.includes(themeName as string)) {
+      themeInstance.setInLS(themeName as string);
+      themeInstance.init();
     }
-  },
-  components: {
-    Header,
-    Footer,
-    SvgSprite,
-    TheDashboardNav: () => import("./views/dashboard/TheDashboardNav.vue")
-  },
-  mounted() {
-    themeInstance.init();
   }
-};
+);
+
+onMounted(() => { themeInstance.init(); });
 </script>

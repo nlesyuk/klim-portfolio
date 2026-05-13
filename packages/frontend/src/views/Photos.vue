@@ -14,50 +14,32 @@
     <Spiner v-else />
   </div>
 </template>
-<script>
-import PhotoPreview from "../components/PhotoPreview";
-import { mapActions, mapState, mapGetters } from "vuex";
+
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import PhotoPreview from "@/components/PhotoPreview.vue";
+import Spiner from "@/components/Spiner.vue";
+import { usePhotosStore } from "@/stores/photos";
 import { isCinematographerMode } from "@/helper/constants";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotoPreview
-  },
-  computed: {
-    ...mapState({
-      allPhotos: state => state.photos.photos
-    }),
-    ...mapGetters(["photographerPhotos", "cinematographerPhotos"]),
-    photos() {
-      const photos = isCinematographerMode
-        ? this.cinematographerPhotos
-        : this.photographerPhotos;
+const route = useRoute();
+const photosStore = usePhotosStore();
 
-      if (!photos?.length) {
-        return [];
-      }
-
-      const sorted = photos.sort((a, b) => b.order - a.order); // new add to the begin
-      // return photos.sort((a, b) => a.order - b.order); // new add to the end
-
-      if (this.$route.name === "commerce") {
-        return sorted.filter(item => item.categories?.includes("commerce"));
-      }
-
-      return sorted;
-    }
-  },
-  methods: {
-    ...mapActions(["getPhotos"])
-  },
-  created() {
-    if (!this.allPhotos) {
-      this.getPhotos();
-    }
-  },
-  mounted() {
-    setTitle("Photos");
+const photos = computed(() => {
+  const base = isCinematographerMode
+    ? photosStore.cinematographerPhotos
+    : photosStore.photographerPhotos;
+  const sorted = base ? [...(base as Record<string, unknown>[])].sort((a, b) => (b.order as number) - (a.order as number)) : [];
+  if (route.name === "commerce") {
+    return sorted.filter((item) => (item.categories as string[] | undefined)?.includes("commerce"));
   }
-};
+  return sorted;
+});
+
+onMounted(() => {
+  setTitle("Photos");
+  if (!photosStore.photos) photosStore.getPhotos();
+});
 </script>
