@@ -185,23 +185,143 @@ Delete `src/store/` after all consumers are converted.
 
 ---
 
-## Phase 6 — Type tightening (≈2 days) ⬜ TODO
+## Phase 6 — Server-state → TanStack Query (≈2–3 days) ⬜ TODO
 
-1. Define domain interfaces in `src/models/`: `Photo`, `Shot`, `Slide`, `Work`, `Contact`, `User`, `Category`.
-2. Type repositories in `src/repositories/` with axios generics:
-   ```ts
-   axios.get<Photo[]>("/api/photos")
+Replace the manual `RepositoryFactory` + Pinia server-state pattern with `@tanstack/vue-query` v5.
+Axios stays as the HTTP client; TanStack Query takes over caching, loading/error state, and background refetching.
+
+### What changes
+
+| Before (Pinia store) | After (TanStack Query) |
+| ---------------------------------------- | ---------------------------------------- |
+| `ref<T\|null>(null)` + `async fetchX()` | `useQuery({ queryKey, queryFn })` |
+| Manual `isLoading`/`serverError` refs | `isPending`, `isError`, `error` from hook |
+| `onMounted(() => store.fetch())` | auto-fetch on component mount |
+| `store.refresh()` button | `queryClient.invalidateQueries(key)` |
+| Pinia stores: photos, shots, slides, videos, general | **deleted** |
+| Pinia `useAuthStore` | **kept** (client/session state, not server state) |
+
+### Steps
+
+1. **Install deps**
+   ```bash
+   npm install @tanstack/vue-query
    ```
-3. Flip `tsconfig.json`:
-   - `noImplicitAny: true`
-   - `strict: true`
-   - `allowJs: false`
-4. Delete `src/shims-tsx.d.ts`; update `src/shims-vue.d.ts` for Vue 3 (`*.vue` exports `DefineComponent`).
-5. Fix fallout file-by-file. Use `// @ts-expect-error` sparingly with a `TODO(types):` comment.
+
+2. **Wire plugin** in `src/main.ts`:
+   ```ts
+   import { VueQueryPlugin, QueryClient } from "@tanstack/vue-query";
+   const queryClient = new QueryClient({
+     defaultOptions: { queries: { staleTime: 1000 * 60 * 5, retry: 1 } },
+   });
+   app.use(VueQueryPlugin, { queryClient });
+   ```
+
+3. **Define query keys** in `src/queries/keys.ts`:
+   ```ts
+   export const queryKeys = {
+     photos: () => ["photos"] as const,
+     shots: () => ["shots"] as const,
+     slides: () => ["slides"] as const,
+     videos: () => ["videos"] as const,
+     contacts: () => ["contacts"] as const,
+     categories: () => ["categories"] as const,
+   };
+   ```
+
+4. **Create domain composables** in `src/composables/` (one per resource):
+   ```ts
+   // src/composables/usePhotos.ts
+   import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
+   import { queryKeys } from "@/queries/keys";
+   import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+   import type { Photo } from "@/models";
+
+   const PhotosRepo = RepositoryFactory.get("photos");
+
+   export function usePhotosQuery() {
+     return useQuery<Photo[]>({
+       queryKey: queryKeys.photos(),
+       queryFn: () => PhotosRepo.get().then((r) => r.data),
+     });
+   }
+
+   export function useDeletePhoto() {
+     const qc = useQueryClient();
+     return useMutation({
+       mutationFn: (id: number) => PhotosRepo.delete(id),
+       onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.photos() }),
+     });
+   }
+   ```
+   Repeat for `useShots`, `useSlides`, `useVideos`, `useContacts`, `useCategories`.
+
+5. **Typed repository query functions** — keep `src/repositories/` files as thin axios wrappers.
+   Add return types once domain models exist (Phase 7):
+   ```ts
+   get(): Promise<AxiosResponse<Photo[]>>
+   ```
+
+6. **Update consuming components** — replace store calls with composable calls:
+   ```ts
+   // Before (Pinia)
+   const photosStore = usePhotosStore();
+   const photos = computed(() => photosStore.photos);
+   onMounted(() => { if (!photos.value) photosStore.getPhotos(); });
+
+   // After (TanStack Query)
+   const { data: photos, isPending, isError } = usePhotosQuery();
+   ```
+   Files to update: all dashboard views + public views that called store fetch actions.
+
+7. **Delete server-state Pinia stores**:
+   - `src/stores/photos.ts` → delete
+   - `src/stores/shots.ts` → delete
+   - `src/stores/slides.ts` → delete
+   - `src/stores/videos.ts` → delete
+   - `src/stores/general.ts` → delete (theme extracted to `useContacts` query + local computed)
+
+8. **Mutation pattern for dashboard CRUD**:
+   ```ts
+   // dashboard/Photos.vue
+   const { mutate: deletePhoto } = useDeletePhoto();
+   // template: @click="deletePhoto(item.id)"
+   ```
+   Remove all manual `isLoading`/`isSuccess`/`serverError` refs — use `isPending`/`isSuccess`/`error` from `useMutation`.
+
+9. **Auth stays in Pinia** — `useAuthStore` manages tokens/session (client state). Auth API calls
+   go through `AuthService` directly, not through TanStack Query.
+
+### Exit criteria
+
+- `@tanstack/vue-query` installed; `VueQueryPlugin` registered in `main.ts`
+- `src/queries/keys.ts` exists with all resource keys
+- `src/composables/use{Photos,Shots,Slides,Videos,Contacts,Categories}.ts` created
+- All 5 server-state Pinia stores deleted; `useAuthStore` untouched
+- All consuming components updated (no remaining `usePhotosStore`, `useShotsStore`, etc. imports)
+- Refresh buttons use `queryClient.invalidateQueries` instead of store action calls
+- Spiner shown via `isPending` from query, not manual `isLoading` ref
 
 ---
 
-## Phase 7 — QA, polish, ship (≈1–2 days) ⬜ TODO
+## Phase 7 — Type tightening (≈2 days) ⬜ TODO
+
+1. Define domain interfaces in `src/models/index.ts`: `Photo`, `Shot`, `Slide`, `Work`, `Contact`, `User`, `Category`.
+2. Type repositories in `src/repositories/` with axios generics — aligns with Phase 6 query functions:
+   ```ts
+   get(): Promise<AxiosResponse<Photo[]>>
+   ```
+3. Type all `useQuery`/`useMutation` generic params using the new models.
+4. Flip `tsconfig.json`:
+   - `noImplicitAny: true`
+   - `strict: true`
+   - `allowJs: false`
+5. Delete `src/shims-tsx.d.ts`; confirm `src/shims-vue.d.ts` correct for Vue 3.
+6. Fix fallout file-by-file. Use `// @ts-expect-error` sparingly with a `TODO(types):` comment.
+
+---
+
+## Phase 8 — QA, polish, ship (≈1–2 days) ⬜ TODO
 
 - Manual smoke (against `packages/backend` running locally):
   - Public site: each route renders, navigation, photo grids, lightbox, video player
@@ -225,9 +345,10 @@ Delete `src/store/` after all consumers are converted.
 | 3 — Dep replacements              | 3–4                    |
 | 4 — Component migration (46 SFCs) | 5–7                    |
 | 5 — Pinia stores                  | 1–2 (overlaps Phase 4) |
-| 6 — Type tightening               | 2                      |
-| 7 — QA & ship                     | 1–2                    |
-| **Total**                         | **~3 weeks solo**      |
+| 6 — TanStack Query                | 2–3                    |
+| 7 — Type tightening               | 2                      |
+| 8 — QA & ship                     | 1–2                    |
+| **Total**                         | **~3.5 weeks solo**    |
 
 ## Risk register
 
@@ -239,6 +360,8 @@ Delete `src/store/` after all consumers are converted.
 | Vite alias mismatch with TS path aliases                              | Keep `tsconfig.json` `paths` and `vite.config.ts` `resolve.alias` in sync. |
 | PWA behavior regression                                               | Compare manifest + SW output pre/post.                                     |
 | Dashboard editor (`vue2-editor`) data shape differs from Tiptap       | Wrapper component to isolate; convert stored HTML on read if needed.       |
+| TanStack Query stale-time tuning                                      | Start with 5 min staleTime; adjust per resource after smoke testing.        |
+| Auth token refresh races with parallel queries                        | Axios interceptor already handles 401 retry — TQ retries on top are redundant; set `retry: 0` for auth-gated queries or disable TQ retry for 401. |
 
 ## Out of scope (explicitly)
 
