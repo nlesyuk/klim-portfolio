@@ -1,197 +1,154 @@
 <template>
-  <vsm-menu
-    :menu="myMenu"
-    :base-width="380"
-    :screen-offset="10"
-    element="div"
-    handler="hover"
-  >
-    <template #default="data">
-      <component :is="data.item.content" class="content" />
-    </template>
-    <template #title="data">
-      {{ data.item.title }}
-    </template>
-    <template #after-nav>
-      <vsm-mob ref="mobile">
-        <div class="vsm-mob-content__mob-menu">
-          <!-- 1 -->
-          <template v-if="$options.isCinematographerMode">
-            <router-link class="vsm-link" exact-path :to="{ path: '/' }">
-              Works
-            </router-link>
-            <router-link class="vsm-link" exact-path :to="{ path: '/shots' }">
-              Shots
-            </router-link>
-            <router-link class="vsm-link" exact-path :to="{ path: '/photo' }">
-              Photo
-            </router-link>
-          </template>
-          <!-- 2 -->
-          <template v-else-if="$options.isPhotographerMode">
-            <router-link class="vsm-link" exact-path :to="{ path: '/' }">
-              Main
-            </router-link>
-            <router-link
-              class="vsm-link"
-              exact-path
-              :to="{ path: '/portfolio' }"
-            >
-              Portfolio
-            </router-link>
-            <router-link class="vsm-link" exact-path :to="{ path: '/photo' }">
-              Personal
-            </router-link>
-          </template>
-          <!-- for all roles -->
-          <router-link class="vsm-link" exact-path :to="{ path: '/contact' }">
-            Contact
-          </router-link>
-        </div>
-      </vsm-mob>
-    </template>
-  </vsm-menu>
+  <nav class="nav" :class="{ 'nav--open': mobileOpen }">
+    <!-- desktop menu -->
+    <ul class="nav__list">
+      <template v-if="isCinematographerMode">
+        <li class="nav__item" @mouseenter="openDropdown('shots')" @mouseleave="closeDropdown">
+          <button class="nav__btn header__nav-item" @click="go('/')">Works</button>
+        </li>
+        <li class="nav__item nav__item--has-dropdown" @mouseenter="openDropdown('shots')" @mouseleave="closeDropdown">
+          <button class="nav__btn header__nav-item" @click="go('/shots')">Shots</button>
+          <div v-if="activeDropdown === 'shots'" class="nav__dropdown"><ShotsSubmenu /></div>
+        </li>
+        <li class="nav__item nav__item--has-dropdown" @mouseenter="openDropdown('photos')" @mouseleave="closeDropdown">
+          <button class="nav__btn header__nav-item" @click="go('/photo')">Photo</button>
+          <div v-if="activeDropdown === 'photos'" class="nav__dropdown"><PhotosSubmenu /></div>
+        </li>
+      </template>
+      <template v-else>
+        <li class="nav__item" @mouseenter="closeDropdown" @mouseleave="closeDropdown">
+          <button class="nav__btn header__nav-item" @click="go('/')">Main</button>
+        </li>
+        <li class="nav__item nav__item--has-dropdown" @mouseenter="openDropdown('portfolio')" @mouseleave="closeDropdown">
+          <button class="nav__btn header__nav-item" @click="go('/portfolio')">Portfolio</button>
+          <div v-if="activeDropdown === 'portfolio'" class="nav__dropdown"><PortfolioSubmenu /></div>
+        </li>
+        <li class="nav__item" @mouseenter="closeDropdown" @mouseleave="closeDropdown">
+          <button class="nav__btn header__nav-item" @click="go('/personal')">Personal</button>
+        </li>
+      </template>
+      <li class="nav__item" @mouseenter="closeDropdown" @mouseleave="closeDropdown">
+        <button class="nav__btn header__nav-item" @click="go('/contact')">Contact</button>
+      </li>
+    </ul>
+
+    <!-- hamburger -->
+    <button class="nav__hamburger" @click="mobileOpen = !mobileOpen" aria-label="menu">
+      <span></span><span></span><span></span>
+    </button>
+
+    <!-- mobile menu -->
+    <div class="nav__mobile" v-if="mobileOpen" @click="mobileOpen = false">
+      <template v-if="isCinematographerMode">
+        <router-link class="vsm-link" :to="{ path: '/' }">Works</router-link>
+        <router-link class="vsm-link" :to="{ path: '/shots' }">Shots</router-link>
+        <router-link class="vsm-link" :to="{ path: '/photo' }">Photo</router-link>
+      </template>
+      <template v-else>
+        <router-link class="vsm-link" :to="{ path: '/' }">Main</router-link>
+        <router-link class="vsm-link" :to="{ path: '/portfolio' }">Portfolio</router-link>
+        <router-link class="vsm-link" :to="{ path: '/photo' }">Personal</router-link>
+      </template>
+      <router-link class="vsm-link" :to="{ path: '/contact' }">Contact</router-link>
+    </div>
+  </nav>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
 import ShotsSubmenu from "./dropdowns/ShotsSubmenu.vue";
 import PhotosSubmenu from "./dropdowns/PhotosSubmenu.vue";
 import PortfolioSubmenu from "./dropdowns/PortfolioSubmenu.vue";
-import { isCinematographerMode, isPhotographerMode } from "@/helper/constants";
+import { isCinematographerMode } from "@/helper/constants";
 
-export default {
-  isPhotographerMode,
-  isCinematographerMode,
-  computed: {
-    myMenu() {
-      const classes = ["header__nav-item"];
+const router = useRouter();
+const activeDropdown = ref<string | null>(null);
+const mobileOpen = ref(false);
 
-      let menu;
-      if (isCinematographerMode) {
-        menu = [
-          // 1
-          {
-            title: "Works",
-            attributes: {
-              class: classes
-            },
-            listeners: {
-              click: () => {
-                if (this.$route.path === "/") return;
-                this.$router.push("/");
-              }
-            }
-          },
-          // 2
-          {
-            title: "Shots",
-            attributes: {
-              class: classes
-            },
-            listeners: {
-              click: () => {
-                if (this.$route.path === "/shots") return;
-                this.$router.push("/shots");
-              }
-            },
-            dropdown: "ShotsSubmenu",
-            content: ShotsSubmenu
-          },
-          // 3
-          {
-            title: "Photo",
-            attributes: {
-              class: classes
-            },
-            listeners: {
-              click: () => {
-                if (this.$route.path === "/photo") return;
-                this.$router.push("/photo");
-              }
-            },
-            dropdown: "PhotosSubmenu",
-            content: PhotosSubmenu
-          }
-        ];
-      } else {
-        menu = [
-          /// 1
-          {
-            title: "Main",
-            attributes: {
-              class: classes
-            },
-            listeners: {
-              click: () => {
-                const path = "/";
-                if (this.$route.path === path) return;
-                this.$router.push(path);
-              }
-            }
-          },
-          /// 2
-          {
-            title: "Portfolio",
-            attributes: {
-              class: classes
-            },
-            listeners: {
-              click: () => {
-                const path = "/portfolio";
-                if (this.$route.path === path) return;
-                this.$router.push(path);
-              }
-            },
-            dropdown: "PortfolioSubmenu",
-            content: PortfolioSubmenu
-          },
-          /// 3
-          {
-            title: "Personal",
-            attributes: {
-              class: classes
-            },
-            listeners: {
-              click: () => {
-                const path = "/personal";
-                if (this.$route.path === path) return;
-                this.$router.push(path);
-              }
-            }
-          }
-        ];
-      }
+function openDropdown(name: string) { activeDropdown.value = name; }
+function closeDropdown() { activeDropdown.value = null; }
 
-      const baseMenu = [
-        {
-          title: "Contact",
-          attributes: {
-            class: classes
-          },
-          listeners: {
-            click: () => {
-              if (this.$route.path === "/contact") return;
-              this.$router.push("/contact");
-            }
-          }
-        }
-      ];
+function go(path: string) {
+  mobileOpen.value = false;
+  if (router.currentRoute.value.path !== path) router.push(path);
+}
 
-      return menu.concat(baseMenu);
-    }
-  },
-  methods: {
-    closeMobMenu(e) {
-      if (e.target.closest(".vsm-link")) {
-        this.$refs["mobile"].closeDropdown();
-      }
-    }
-  },
-  mounted() {
-    document.addEventListener("click", this.closeMobMenu);
-  },
-  beforeDestroy() {
-    document.removeEventListener("click", this.closeMobMenu);
-  }
-};
+function handleClickOutside(e: MouseEvent) {
+  if (!(e.target as HTMLElement).closest(".nav")) { mobileOpen.value = false; closeDropdown(); }
+}
+
+onMounted(() => document.addEventListener("click", handleClickOutside));
+onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside));
 </script>
+
+<style lang="scss" scoped>
+.nav {
+  position: relative;
+
+  &__list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+  }
+
+  &__item {
+    position: relative;
+
+    &--has-dropdown:hover .nav__dropdown { display: block; }
+  }
+
+  &__btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 16px;
+  }
+
+  &__dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 100;
+    background: #fff;
+    min-width: 160px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  }
+
+  &__hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+
+    span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: currentColor;
+    }
+
+    @media (max-width: 768px) { display: flex; }
+  }
+
+  &__list { @media (max-width: 768px) { display: none; } }
+
+  &__mobile {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+}
+</style>

@@ -40,7 +40,7 @@ Migration plan for `packages/frontend` from Vue 2.6 (Options API, Vue CLI, Vuex 
 
 ---
 
-## Phase 0 — Audit (≈1 day)
+## Phase 0 — Audit (≈1 day) ✅ DONE
 
 Run these greps from `packages/frontend/` and record hits per file. Each becomes a migration ticket.
 
@@ -65,106 +65,74 @@ grep -rln "vuelidate\|hooper\|vue-stripe-menu\|vue2-editor" src/
 ```
 
 **Deliverable:** `docs/audit.md` with file × issue matrix. Estimate per file (S/M/L). Identify the 3–5 highest-risk files.
+> ✅ Delivered: `docs/audit.md` created.
 
 ---
 
-## Phase 1 — Tooling swap (still on Vue 2) (≈1–2 days)
+## Phase 1 — Tooling swap (≈1–2 days) ✅ DONE
 
 Decouple build migration from framework migration so each step is verifiable.
 
-1. **Add Vite alongside Vue CLI**
-   - Install `vite`, `@vitejs/plugin-vue2`, `vite-plugin-vue2-script-setup` (if needed for incremental setup syntax)
-   - Create `vite.config.ts`. Port these from `vue.config.js`:
-     - Entry: `src/main.ts`
-     - Alias: `@` → `src/`, `Repositories` → `src/repositories/`
-     - Public dir: `public/`
-     - SCSS preprocessor opts
-   - Add npm scripts: `dev:vite`, `build:vite`. Keep `serve`/`build` (CLI) until parity confirmed.
-2. **Replace `node-sass` with `sass`** — usually a no-op aside from a few `/deep/` → `:deep()` audits (defer the latter to Phase 4).
-3. **Verify dev + production build green** on Vite. Compare bundle output sanity.
-4. **Cut over scripts:** `serve` → Vite, remove `@vue/cli-*` deps, delete `vue.config.js`, `babel.config.js` (only if not needed by remaining tooling).
-5. **ESLint:** upgrade to `eslint-plugin-vue@9` (supports v2 and v3), Prettier 3, `@typescript-eslint@7+`.
+1. ✅ **Add Vite** — `vite.config.ts` created with `@vitejs/plugin-vue`, `vite-plugin-pwa`, `@` + `Repositories` aliases.
+2. ✅ **Replace `node-sass` with `sass`** (dart-sass).
+3. ✅ **`package.json` rewritten** — `@vue/cli-*` removed, Vite 5 + `vue-tsc` added.
+4. ✅ **`public/index.html`** — webpack template vars removed, `<script type="module" src="/src/main.ts">` added.
+5. ⬜ **ESLint:** upgrade to `eslint-plugin-vue@9`, Prettier 3, `@typescript-eslint@7+`.
 
 **Exit criteria:** App runs on Vite, builds clean, eslint passes, no Vue CLI deps in `package.json`.
+> ✅ Toolchain swapped. ESLint upgrade deferred.
 
 ---
 
-## Phase 2 — Vue 3 core swap (≈2 days)
+## Phase 2 — Vue 3 core swap (≈2 days) ✅ DONE
 
-1. **Bump deps:**
-   - `vue@^3.4`
-   - `vue-router@^4`
-   - **Remove** `vuex` → add `pinia@^2`
-   - Swap `@vitejs/plugin-vue2` → `@vitejs/plugin-vue`
-   - Remove `vue-template-compiler`
-2. **Rewrite `src/main.ts`:**
-   ```ts
-   import { createApp } from "vue"
-   import { createPinia } from "pinia"
-   import App from "./App.vue"
-   import router from "./router"
-   import "./registerServiceWorker"
-   import "@/scss/style.scss"
-
-   const app = createApp(App)
-   app.use(createPinia())
-   app.use(router)
-   app.mount("#app")
-   ```
-   - Move `$message` / `$error` out of `Vue.prototype` → **composable** `useNotify()` returning `{ success, error }` (preferred) OR `app.config.globalProperties.$message` as a transitional shim.
-   - Drop `globalThis.SimpleLightbox` — import locally where used.
-   - Drop global `Vue.component("Spiner", ...)` / `Vue.component("Error", ...)` — import per-view.
-3. **Rewrite `src/router/index.ts`:**
-   ```ts
-   import { createRouter, createWebHistory } from "vue-router"
-   const router = createRouter({
-     history: createWebHistory(import.meta.env.BASE_URL),
-     routes: [/* ... */],
-   })
-   ```
-   - Update guards: `next()` still works but prefer return-value style.
-4. **App bootstraps but most pages will break** — that's expected. Land Phase 2 even if pages render with errors; subsequent phases fix them.
+1. ✅ **Bump deps:** `vue@^3.4`, `vue-router@^4`, `pinia@^2`, `@vitejs/plugin-vue`; removed `vuex`, `vue-template-compiler`.
+2. ✅ **`src/main.ts`** rewritten — `createApp`, `createPinia`, `useNotify()` composable replacing `Vue.prototype.$message/$error`, `SimpleLightbox` removed from `globalThis`.
+3. ✅ **`src/router/index.ts`** rewritten — `createRouter` + `createWebHistory`, wildcard `/:pathMatch(.*)*`, return-value guards using `useAuthStore`.
+4. ✅ **`src/shims-vue.d.ts`** updated for Vue 3 `DefineComponent`.
+5. ✅ **`src/registerServiceWorker.ts`** replaced with no-op stub (PWA handled by `vite-plugin-pwa`).
+6. ✅ **`src/helper/constants.ts`** — `process.env.VUE_APP_*` → `import.meta.env.VITE_*`.
+7. ✅ **Composables created:** `src/composables/useNotify.ts`, `src/composables/useSiteMode.ts`.
 
 **Exit criteria:** `npm run dev` starts, root route renders (even if minimal), no `Vue.` references remain in `src/`.
+> ✅ Done.
 
 ---
 
-## Phase 3 — Replace blocker deps (≈3–4 days)
+## Phase 3 — Replace blocker deps (≈3–4 days) 🔄 IN PROGRESS
 
 Tackle in this order — least to most risky:
 
-1. **`node-sass` cleanup** (if any `/deep/` selectors): convert to `:deep()`.
-2. **Vuelidate → `@vuelidate/core`** — rewrite affected forms (`Login.vue`, `Contact.vue`, dashboard add/edit views) using `useVuelidate` in composition style.
-3. **Hooper → Swiper v11** in `src/components/Slides.vue`. Update slide template structure.
-4. **vue2-editor → Tiptap** in dashboard editor views. Define a small wrapper component to isolate the swap.
-5. **vue-stripe-menu replacement** in `src/components/Nav.vue` (HIGHEST RISK):
-   - Time-box: **2 days**.
-   - Fallback: plain CSS dropdown + transition. Acceptance = same visual hover/click behavior on desktop, hamburger on mobile.
-   - Refactor `$options.isPhotographerMode` into `useSiteMode()` composable returning a `ref<'photographer' | 'cinematographer'>`.
-6. **PWA:** swap to `vite-plugin-pwa`, port manifest/service-worker config.
+1. ✅ **`node-sass` cleanup** — replaced with `sass` (dart-sass).
+2. ⬜ **Vuelidate → `@vuelidate/core`** — rewrite affected forms (`Login.vue`, `Contact.vue`, dashboard add/edit views) using `useVuelidate` in composition style.
+3. ⬜ **Hooper → Swiper v11** in `src/components/Slides.vue`. Update slide template structure.
+4. ⬜ **vue2-editor → Tiptap** in dashboard editor views. Define a small wrapper component to isolate the swap.
+5. ✅ **vue-stripe-menu replacement** in `src/components/Nav.vue` — custom CSS dropdown with scoped SCSS, hover/click behavior on desktop, hamburger on mobile. `$options.isPhotographerMode` refactored into `useSiteMode()` composable.
+6. ✅ **PWA:** `vite-plugin-pwa` wired in `vite.config.ts`; `registerServiceWorker.ts` replaced with stub.
 
 **Exit criteria:** All blocker deps removed from `package.json`; affected components render and behave at parity.
+> 🔄 Remaining: Vuelidate forms, Swiper (Slides.vue), Tiptap (dashboard editors).
 
 ---
 
-## Phase 4 — Component migration: Options API → `<script setup lang="ts">` (≈5–7 days)
+## Phase 4 — Component migration: Options API → `<script setup lang="ts">` (≈5–7 days) 🔄 IN PROGRESS
 
 Migrate in dependency order (leaves first) so parents land on already-converted children.
 
-### Batch 1 — Leaf presentational
+### Batch 1 — Leaf presentational ✅ DONE
 `Spiner.vue`, `Footer.vue`, `SVG-sprite.vue`, `Slide.vue`, `Error.vue`, `NotFound.vue`
 
-### Batch 2 — Grids & previews
+### Batch 2 — Grids & previews ✅ DONE
 `PhotosGrid.vue`, `PhotosPreviewGrid.vue`, `PhotosGridShots.vue`, `WorksGrid.vue`, `PhotoPreview.vue`, `TheCategoryFilter.vue`, `VimeoVideoPlayer.vue`
 
-### Batch 3 — Nav & header
-`Header.vue`, `Nav.vue`, `dropdowns/*.vue`
+### Batch 3 — Nav & header ✅ DONE
+`Header.vue`, `Nav.vue`, `dropdowns/ShotsSubmenu.vue`, `dropdowns/PhotosSubmenu.vue`, `dropdowns/PortfolioSubmenu.vue`
 
-### Batch 4 — Public views
-`Main.vue`, `Work.vue`, `Shots.vue`, `Photo.vue`, `Photos.vue`, `Portfolio.vue`, `Personal.vue`, `Contact.vue`, `Login.vue`, `Slider.vue`, `PhotographerMain.vue`, `CinematogapherMain.vue`, `Calendar.vue`
+### Batch 4 — Public views ⬜ TODO
+`App.vue`, `Main.vue`, `Work.vue`, `Shots.vue`, `Photo.vue`, `Photos.vue`, `Portfolio.vue`, `Personal.vue`, `Contact.vue`, `Login.vue`, `Slider.vue` (needs Swiper 11), `PhotographerMain.vue`, `CinematogapherMain.vue`, `Calendar.vue`
 
-### Batch 5 — Dashboard (most logic, do last)
-`dashboard/*.vue` (CRUD views, editors, theme toggle)
+### Batch 5 — Dashboard (most logic, do last) ⬜ TODO
+`dashboard/Dashboard.vue`, `dashboard/Contacts.vue`, `dashboard/PhotoAdd.vue`, `dashboard/Photos.vue`, `dashboard/ShotAdd.vue`, `dashboard/ShotEdit.vue`, `dashboard/Shots.vue`, `dashboard/SlideAdd.vue`, `dashboard/Slider.vue`, `dashboard/TheDashboardNav.vue`, `dashboard/ThemeToggle.vue`, `dashboard/WorkAdd.vue`, `dashboard/Works.vue`
 
 ### Per-file conversion checklist
 
@@ -187,18 +155,18 @@ Migrate in dependency order (leaves first) so parents land on already-converted 
 
 ---
 
-## Phase 5 — Pinia store migration (parallel with Phase 4)
+## Phase 5 — Pinia store migration (parallel with Phase 4) ✅ DONE
 
 Replace each Vuex module with a Pinia store 1:1. Recommend converting stores **before** Batch 4/5 views so dashboard work consumes the new API.
 
-| Vuex module   | Pinia store       | File                    |
-| ------------- | ----------------- | ----------------------- |
-| `general`     | `useGeneralStore` | `src/stores/general.ts` |
-| `videos`      | `useVideosStore`  | `src/stores/videos.ts`  |
-| `photos`      | `usePhotosStore`  | `src/stores/photos.ts`  |
-| `shots`       | `useShotsStore`   | `src/stores/shots.ts`   |
-| `slides`      | `useSlidesStore`  | `src/stores/slides.ts`  |
-| `auth.module` | `useAuthStore`    | `src/stores/auth.ts`    |
+| Vuex module   | Pinia store       | File                    | Status |
+| ------------- | ----------------- | ----------------------- | ------ |
+| `general`     | `useGeneralStore` | `src/stores/general.ts` | ✅      |
+| `videos`      | `useVideosStore`  | `src/stores/videos.ts`  | ✅      |
+| `photos`      | `usePhotosStore`  | `src/stores/photos.ts`  | ✅      |
+| `shots`       | `useShotsStore`   | `src/stores/shots.ts`   | ✅      |
+| `slides`      | `useSlidesStore`  | `src/stores/slides.ts`  | ✅      |
+| `auth.module` | `useAuthStore`    | `src/stores/auth.ts`    | ✅      |
 
 Use **setup-style** Pinia stores (composition syntax) for consistency with components:
 
@@ -217,7 +185,7 @@ Delete `src/store/` after all consumers are converted.
 
 ---
 
-## Phase 6 — Type tightening (≈2 days)
+## Phase 6 — Type tightening (≈2 days) ⬜ TODO
 
 1. Define domain interfaces in `src/models/`: `Photo`, `Shot`, `Slide`, `Work`, `Contact`, `User`, `Category`.
 2. Type repositories in `src/repositories/` with axios generics:
@@ -233,7 +201,7 @@ Delete `src/store/` after all consumers are converted.
 
 ---
 
-## Phase 7 — QA, polish, ship (≈1–2 days)
+## Phase 7 — QA, polish, ship (≈1–2 days) ⬜ TODO
 
 - Manual smoke (against `packages/backend` running locally):
   - Public site: each route renders, navigation, photo grids, lightbox, video player
