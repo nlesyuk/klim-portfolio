@@ -1,83 +1,55 @@
 <template>
-  <hooper
-    :settings="hooperSettings"
-    style="height: auto; margin-bottom: 20px;"
-    @slide="onSlideChange"
+  <swiper
+    :modules="modules"
+    :slides-per-view="1"
+    :loop="true"
+    :centered-slides="true"
+    :autoplay="{ delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true }"
+    :pagination="{ clickable: true }"
+    :navigation="true"
+    style="margin-bottom: 20px"
+    @slide-change="onSlideChange"
   >
-    <slide v-for="(slide, idx) in sortedSlides" :key="idx" :index="idx">
+    <swiper-slide v-for="(slide, idx) in sortedSlides" :key="idx">
       <SlideComponent
         :source="slide"
         :slideId="idx"
         :currentSlide="currentSlide"
         :allSlides="sortedSlides.length"
       />
-    </slide>
-    <hooper-navigation slot="hooper-addons"></hooper-navigation>
-    <hooper-pagination slot="hooper-addons"></hooper-pagination>
-  </hooper>
+    </swiper-slide>
+  </swiper>
 </template>
 
-<script>
-import { mapActions, mapState } from "vuex";
-import SlideComponent from "../components/Slide";
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import type { Swiper as SwiperClass } from "swiper";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import SlideComponent from "@/components/Slide.vue";
+import { useSlidesStore } from "@/stores/slides";
 
-import {
-  Hooper,
-  Slide,
-  Pagination as HooperPagination,
-  Navigation as HooperNavigation
-} from "hooper";
-import "hooper/dist/hooper.css";
+const slidesStore = useSlidesStore();
+const currentSlide = ref(0);
+const modules = [Navigation, Pagination, Autoplay];
 
-export default {
-  components: {
-    SlideComponent,
-    Hooper,
-    Slide,
-    HooperPagination,
-    HooperNavigation
-  },
-  data() {
-    return {
-      currentSlide: 0,
-      hooperSettings: {
-        autoPlay: true,
-        itemsToShow: 1,
-        playSpeed: 5 * 1000,
-        centerMode: true,
-        hoverPause: true,
-        wheelControl: false,
-        infiniteScroll: true
-      }
-    };
-  },
-  computed: {
-    ...mapState({
-      allSlides: state => state.slides.slides
-    }),
-    sortedSlides() {
-      const slides = this.allSlides;
-      if (slides) {
-        const sorted = slides.sort((a, b) => b.order - a.order); // new add to the begin
-        // const sorted = slides.sort((a, b) => a.order - b.order); // new add to the end
-        return sorted;
-      }
-      return slides;
-    }
-  },
-  methods: {
-    ...mapActions(["getSlides"]),
-    onSlideChange(object) {
-      this.currentSlide = object.currentSlide;
-    }
-  },
-  mounted() {
-    // api
-    if (!this.allSlides) {
-      this.getSlides().then(() => {
-        this.currentSlide = 1;
-      });
-    }
+const sortedSlides = computed(() => {
+  const slides = slidesStore.slides as Array<Record<string, unknown>> | null;
+  if (!slides) return [];
+  return [...slides].sort((a, b) => (b.order as number) - (a.order as number));
+});
+
+function onSlideChange(swiper: SwiperClass) {
+  currentSlide.value = swiper.activeIndex;
+}
+
+onMounted(async () => {
+  if (!slidesStore.slides) {
+    await slidesStore.getSlides();
+    currentSlide.value = 1;
   }
-};
+});
 </script>

@@ -11,34 +11,16 @@
       <div class="dashboard-slides__top">
         <h4 class="dashboard-slides__title">{{ item.title }}</h4>
         <div class="dashboard-slides__btns">
-          <button
-            type="button"
-            class="dashboard__btn-inline"
-            title="order"
-            disabled
-          >
+          <button type="button" class="dashboard__btn-inline" title="order" disabled>
             {{ item.order }}
           </button>
-          <button
-            type="submit"
-            class="dashboard__btn-inline"
-            @click="onEdit(item.id)"
-          >
+          <button type="submit" class="dashboard__btn-inline" @click="emit('edit', item.id)">
             Edit
           </button>
-          <button
-            type="button"
-            class="dashboard__btn-inline"
-            @click="onDelete(item.id)"
-          >
+          <button type="button" class="dashboard__btn-inline" @click="emit('delete', item.id)">
             Delete
           </button>
-          <button
-            type="button"
-            class="dashboard__btn-inline"
-            title="id"
-            disabled
-          >
+          <button type="button" class="dashboard__btn-inline" title="id" disabled>
             id:{{ item.id }}
           </button>
         </div>
@@ -53,25 +35,10 @@
     </li>
   </ul>
 </template>
-<script>
-import VimeoVideoPlayer from "@/components/VimeoVideoPlayer";
-export default {
-  props: {
-    slides: {
-      type: Array,
-      required: true
-    }
-  },
-  components: {
-    VimeoVideoPlayer
-  },
-  methods: {
-    onEdit(item) {
-      this.$emit("edit", item);
-    },
-    onDelete(item) {
-      this.$emit("delete", item);
-    }
-  }
-};
+
+<script setup lang="ts">
+import VimeoVideoPlayer from "@/components/VimeoVideoPlayer.vue";
+
+defineProps<{ slides: Record<string, unknown>[] }>();
+const emit = defineEmits<{ edit: [id: unknown]; delete: [id: unknown] }>();
 </script>

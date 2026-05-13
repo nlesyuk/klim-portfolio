@@ -1,27 +1,16 @@
 <template>
   <section class="dashboard-works-add">
-    <form
-      class="dashboard__form dashboard__form--preview"
-      @submit.prevent="submit"
-    >
+    <form class="dashboard__form dashboard__form--preview" @submit.prevent="submit">
       <div class="dashboard__side">
         <p class="dashboard__text">
           * для корректного відображення всі фото мають бути одного розміру
         </p>
 
-        <label
-          :class="[
-            'dashboard__label',
-            { 'dashboard__label-error': $v.title.$dirty && $v.title.$error }
-          ]"
-        >
+        <label :class="['dashboard__label', { 'dashboard__label-error': v$.title.$dirty && v$.title.$error }]">
           <span>Title</span>
           <input type="text" v-model="title" />
-          <strong
-            class="dashboard__label-error-info"
-            v-if="$v.title.$dirty && $v.title.$error"
-          >
-            Min length is {{ $v.title.$params.minLength.min }}
+          <strong class="dashboard__label-error-info" v-if="v$.title.$dirty && v$.title.$error">
+            Min length is 2
           </strong>
         </label>
 
@@ -29,113 +18,60 @@
         <label class="dashboard__label">
           <span>Order</span>
           <select v-model="order">
-            <option disabled selected value="null">
-              Please choose order
-            </option>
-            <option
-              v-for="(work, index) of worksLength"
-              :key="index"
-              :value="index"
-            >
-              {{ index }}
-            </option>
+            <option disabled selected value="null">Please choose order</option>
+            <option v-for="(w, index) of worksLength" :key="index" :value="index">{{ index }}</option>
           </select>
         </label>
 
-        <label
-          :class="[
-            'dashboard__label',
-            {
-              'dashboard__label-error': $v.videoId.$dirty && $v.videoId.$error
-            }
-          ]"
-        >
+        <label :class="['dashboard__label', { 'dashboard__label-error': v$.videoId.$dirty && v$.videoId.$error }]">
           <span>Vimeo id</span>
           <input type="text" v-model="videoId" />
-          <strong
-            class="dashboard__label-error-info"
-            v-if="$v.videoId.$dirty && $v.videoId.$error"
-          >
-            Must be min Length
-            {{ $v.videoId.$params.minLength.min }}
-            and max length
-            {{ $v.videoId.$params.maxLength.max }}
+          <strong class="dashboard__label-error-info" v-if="v$.videoId.$dirty && v$.videoId.$error">
+            Must be min length 9 and max length 20
           </strong>
         </label>
 
         <label class="dashboard__label">
           <span>Description under title</span>
-          <VueEditor
-            class="vue2editor"
-            v-model="description"
-            placeholder="description"
-          ></VueEditor>
+          <RichEditor class="vue2editor" v-model="description" placeholder="description" />
         </label>
 
         <label class="dashboard__label">
           <span>Credits</span>
-          <VueEditor
-            class="vue2editor"
-            v-model="credits"
-            placeholder="credits"
-          ></VueEditor>
+          <RichEditor class="vue2editor" v-model="credits" placeholder="credits" />
         </label>
 
         <!-- upload work -->
         <div class="dashboard__label">
           <span>Upload photos</span>
-          <input type="file" multiple @change="getFiles" ref="files" />
+          <input type="file" multiple @change="getFiles" ref="filesInput" />
         </div>
 
-        <!-- TODO: shift loyout while editing a work -->
         <div class="dashboard__label">
           <!-- files: edit -->
           <ul class="dashboard__list-imgs" v-if="isEdit">
             <li v-for="(file, idx) in selectedImages" :key="idx">
               <span class="dashboard__badge badge-yellow">{{ idx + 1 }}</span>
-              <button type="button" @click="deleteExistingImage(file.id)">
-                delete
-              </button>
+              <button type="button" @click="deleteExistingImage(file.id)">delete</button>
               <span>{{ getName(file) }}</span>
               <img :src="file.src" alt="edit" />
-
               <label class="dashboard__label">
                 <span>Please select order of photos if need</span>
                 <select v-model="file.order">
-                  <option disabled selected value="null">
-                    Please choose order
-                  </option>
-                  <option
-                    v-for="(img, index) of wholeWorkOrders"
-                    :key="index"
-                    :value="index"
-                  >
-                    {{ index }}
-                  </option>
+                  <option disabled selected value="null">Please choose order</option>
+                  <option v-for="(img, index) of wholeWorkOrders" :key="index" :value="index">{{ index }}</option>
                 </select>
               </label>
-
               <label class="dashboard__label">
                 <input type="checkbox" v-model="file.isPreview" :value="true" />
                 <span class="inline">Is preview photo?</span>
               </label>
-
               <label class="dashboard__label mb0">
-                <input
-                  type="radio"
-                  :name="`edit-format${idx}`"
-                  value="vertical"
-                  v-model="file.format"
-                />
+                <input type="radio" :name="`edit-format${idx}`" value="vertical" v-model="file.format" />
                 <span class="inline">vertical</span>
               </label>
               <label class="dashboard__label">
-                <input
-                  type="radio"
-                  :name="`edit-format${idx}`"
-                  value="horizontal"
-                  v-model="file.format"
-                />
+                <input type="radio" :name="`edit-format${idx}`" value="horizontal" v-model="file.format" />
                 <span class="inline">horizontal</span>
               </label>
             </li>
@@ -143,78 +79,34 @@
 
           <!-- files: add -->
           <ul class="dashboard__list-imgs" v-else>
-            <!-- items -->
             <li v-for="(file, idx) in selectedImages" :key="idx">
               <span class="dashboard__badge badge-yellow">{{ idx + 1 }}</span>
-              <button type="button" @click="removeSelectedImage(file.src)">
-                remove
-              </button>
-              <p
-                :class="[
-                  'dashboard__size',
-                  {
-                    oversize:
-                      file.file.size / 1024 >= $options.allowedImageSizeInKb
-                  }
-                ]"
-              >
-                {{ getSize(file.file.size) }}
+              <button type="button" @click="removeSelectedImage(file.src)">remove</button>
+              <p :class="['dashboard__size', { oversize: (file.file?.size ?? 0) / 1024 >= allowedImageSizeInKb }]">
+                {{ getSize(file.file?.size ?? 0) }}
               </p>
-
-              <p class="dashboard__img-name">{{ file.file.name }}</p>
-              <!-- img preview -->
+              <p class="dashboard__img-name">{{ file.file?.name }}</p>
               <img :src="file.src" alt="image preview" />
-
-              <!-- order -->
               <label class="dashboard__label">
                 <span>Please select order of photos if need</span>
                 <select v-model="file.order">
-                  <option disabled selected value="null">
-                    Please choose order
-                  </option>
-
+                  <option disabled selected value="null">Please choose order</option>
                   <template v-if="isEdit">
-                    <option
-                      v-for="(img, index) of [
-                        ...selectedImages,
-                        ...work.photos
-                      ]"
-                      :key="index"
-                      :value="index"
-                    >
-                      {{ [...selectedImages, ...work.photos].length - index }}
+                    <option v-for="(img, index) of [...selectedImages, ...(work?.photos ?? [])]" :key="index" :value="index">
+                      {{ [...selectedImages, ...(work?.photos ?? [])].length - index }}
                     </option>
                   </template>
                   <template v-else>
-                    <option
-                      v-for="(img, index) of selectedImages"
-                      :key="index"
-                      :value="index"
-                    >
-                      {{ index }}
-                    </option>
+                    <option v-for="(img, index) of selectedImages" :key="index" :value="index">{{ index }}</option>
                   </template>
                 </select>
               </label>
-
-              <!-- preview -->
               <label class="dashboard__label">
                 <input type="checkbox" v-model="file.isPreview" :value="true" />
                 <span class="inline">Is preview photo?</span>
               </label>
-
-              <!-- radio -->
-              <label
-                v-for="format in photoFormat"
-                class="dashboard__label mb0"
-                :key="format"
-              >
-                <input
-                  type="radio"
-                  :name="`photo_format-${idx}`"
-                  :value="format"
-                  v-model="file.format"
-                />
+              <label v-for="format in photoFormat" class="dashboard__label mb0" :key="format">
+                <input type="radio" :name="`photo_format-${idx}`" :value="format" v-model="file.format" />
                 <span class="inline">{{ format }}</span>
               </label>
             </li>
@@ -224,69 +116,30 @@
         <!-- work order -->
         <label class="dashboard__label">
           <ul v-if="clientErrors.length" class="dashboard__error-list">
-            <li v-for="error in clientErrors" :key="error">
-              <span>{{ error }}</span>
-            </li>
+            <li v-for="error in clientErrors" :key="error"><span>{{ error }}</span></li>
           </ul>
           <select v-model="order" v-if="worksLength.length">
-            <option disabled selected value="null">
-              Please choose order
-            </option>
-            <option
-              v-for="(work, index) in worksLength"
-              :key="index"
-              :value="index"
-            >
+            <option disabled selected value="null">Please choose order</option>
+            <option v-for="(w, index) in worksLength" :key="index" :value="index">
               {{ index }}
-              <template v-if="index + 1 === worksLength">
-                (automate setted position)
-              </template>
             </option>
           </select>
         </label>
 
         <div class="dashboard__btns-container">
-          <button
-            type="submit"
-            class="dashboard__submit"
-            v-if="isEdit"
-            :disabled="isLoading"
-          >
-            Update work
-          </button>
-          <button
-            type="submit"
-            class="dashboard__submit"
-            v-else
-            :disabled="isLoading"
-          >
-            Add work
-          </button>
-          <button
-            type="reset"
-            class="dashboard__submit"
-            @click="reset"
-            :disabled="isLoading"
-          >
-            Reset
-          </button>
+          <button type="submit" class="dashboard__submit" v-if="isEdit" :disabled="isLoading">Update work</button>
+          <button type="submit" class="dashboard__submit" v-else :disabled="isLoading">Add work</button>
+          <button type="reset" class="dashboard__submit" @click="reset" :disabled="isLoading">Reset</button>
           <Spiner v-if="isLoading" :isCenter="false" />
-
           <div class="dashboard__status">
-            <div class="dashboard__status--success" v-if="isSuccess">
-              Work was added
-            </div>
-            <div class="dashboard__status--fail" v-if="serverError">
-              Server error: {{ serverError }}
-            </div>
+            <div class="dashboard__status--success" v-if="isSuccess">Work was added</div>
+            <div class="dashboard__status--fail" v-if="serverError">Server error: {{ serverError }}</div>
           </div>
         </div>
       </div>
+
       <div class="dashboard__side dashboard__area-preview">
-        <div
-          class="dashboard-works-add__preview-cont"
-          v-if="previewWork && previewWork.photos.length"
-        >
+        <div class="dashboard-works-add__preview-cont" v-if="previewWork && previewWork.photos.length">
           <Work :isPreview="true" :previewWork="previewWork" />
         </div>
       </div>
@@ -294,353 +147,225 @@
   </section>
 </template>
 
-<script>
-import Work from "../Work";
-import { VueEditor } from "vue2-editor";
-import { required, minLength, maxLength } from "vuelidate/lib/validators";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from "vue";
+import useVuelidate from "@vuelidate/core";
+import { required, minLength, maxLength } from "@vuelidate/validators";
+import Work from "@/views/Work.vue";
+import RichEditor from "@/components/RichEditor.vue";
+import Spiner from "@/components/Spiner.vue";
+import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import { getHeightAndWidthFromDataUrl, getName } from "@/helper/index";
+import { allowedImageSizeInKb } from "@/helper";
+
 const VideosRepository = RepositoryFactory.get("videos");
-import { getHeightAndWidthFromDataUrl, getName } from "../../helper/index";
-import { allowedImageSizeInKb } from "../../helper";
 
-export default {
-  allowedImageSizeInKb,
-  props: {
-    work: {
-      type: Object
-    },
-    works: {
-      type: Array
-    },
-    isEdit: {
-      type: Boolean
-    }
-  },
-  components: {
-    Work,
-    VueEditor
-  },
-  watch: {
-    work() {
-      this.setDataForEdit();
-    }
-  },
-  data() {
-    return {
-      title: "",
-      credits: "",
-      videoId: "",
-      description: "",
-      order: null,
-      selectedImages: [],
-      // general:
-      isLoading: false,
-      isSuccess: false,
-      clientErrors: [],
-      serverError: null,
-      photoFormat: ["vertical", "horizontal"]
-    };
-  },
-  computed: {
-    previewWork() {
-      if (this.isEdit) {
-        return {
-          title: this.title,
-          photos: [...this.selectedImages],
-          credits: this.credits,
-          description: this.description,
-          videos: {
-            vimeoId: this.videoId
-          }
-        };
-      } else {
-        const workPhotos = this.work?.photos ? this.work.photos : [];
+const props = defineProps<{
+  work?: Record<string, unknown>;
+  works?: Record<string, unknown>[];
+  isEdit?: boolean;
+}>();
 
-        return {
-          title: this.title,
-          photos: [...this.selectedImages, ...workPhotos],
-          credits: this.credits,
-          description: this.description,
-          videos: {
-            vimeoId: this.videoId
-          }
-        };
-      }
-    },
-    // base
-    worksLength() {
-      if (!this.works) {
-        return [];
-      }
-      const arr = Array.from(this.works).map(v => v.order);
-      return arr?.length
-        ? Math.max(...arr) + 2 // 2 bacause we start counting from 0 and need +1 and then +1 again
-        : 1;
-    },
-    getMaxOrderNumber() {
-      const arrOrders = this.selectedImages?.map(v => +v.order);
-      return Math.max(...arrOrders);
-    },
-    wholeWorkOrders() {
-      const arr = ([].length = this.getMaxOrderNumber + 1 || 1);
-      return arr;
-    }
-  },
-  validations: {
-    title: {
-      required,
-      minLength: minLength(2)
-    },
-    // description: {
-    //   minLength: minLength(2)
-    // },
-    // credits: {
-    //   required,
-    //   minLength: minLength(2)
-    // },
-    videoId: {
-      required,
-      minLength: minLength(9),
-      maxLength: maxLength(20)
-    }
-  },
-  methods: {
-    reset() {
-      this.title = "";
-      this.description = "";
-      this.credits = "";
-      this.videoId = "";
-      this.order = null;
-      this.selectedImages = [];
-      this.$emit("resetForm");
-    },
-    async getFiles() {
-      const files = this.$refs.files.files;
+const emit = defineEmits<{
+  "work-create-successfully": [];
+  resetForm: [];
+}>();
 
-      let idx = this.selectedImages?.length ?? 0;
-      for (const file of files) {
-        const resolution = await getHeightAndWidthFromDataUrl(file);
-        const format =
-          resolution.height > resolution.width ? "vertical" : "horizontal";
+const filesInput = ref<HTMLInputElement | null>(null);
+const title = ref("");
+const credits = ref("");
+const videoId = ref("");
+const description = ref("");
+const order = ref<unknown>(null);
+const selectedImages = ref<Record<string, unknown>[]>([]);
+const isLoading = ref(false);
+const isSuccess = ref(false);
+const clientErrors = ref<string[]>([]);
+const serverError = ref<string | null>(null);
+const photoFormat = ["vertical", "horizontal"];
 
-        this.selectedImages.push({
-          file,
-          order: idx,
-          isPreview: false,
-          format,
-          src: URL.createObjectURL(file)
-        });
-
-        idx++;
-      }
-    },
-    removeSelectedImage(src) {
-      this.selectedImages = this.selectedImages.filter(v => v.src != src);
-    },
-    setOrder() {
-      if (this.isEdit) {
-        this.order = this.work.order;
-      } else if (this.works) {
-        this.order = this.works.length;
-      }
-    },
-    setServerStatusInUI(isSuccess, statusText) {
-      if (isSuccess) {
-        this.isSuccess = true;
-        setTimeout(() => {
-          this.isSuccess = false;
-          this.$emit("work-create-successfully");
-        }, 10 * 1000);
-        this.serverError = false;
-      } else {
-        this.serverError = statusText;
-        setTimeout(() => {
-          this.serverError = false;
-        }, 20 * 1000);
-      }
-    },
-    getName: getName,
-    getSize(sizeInByte) {
-      let name = "Kb";
-      let size = Math.floor(sizeInByte / 1024); // get Kb
-      if (size >= 1024) {
-        name = "Mb";
-        size = size / 1024; // get Mb
-        size = size.toFixed(2);
-      }
-
-      return `${size} ${name}`;
-    },
-
-    // send work to a server:
-    async submit() {
-      this.clientErrors = [];
-      if (this.$v.$invalid) {
-        this.$v.$touch();
-        return;
-      }
-
-      const images = Array.from(this.selectedImages);
-      if (images.length) {
-        const isHasPreview = images.some(v => v.isPreview);
-        if (!isHasPreview) {
-          this.clientErrors.push("Please choose preview image for the work");
-          return;
-        }
-      } else {
-        this.clientErrors.push("Please select at least one image");
-        return;
-      }
-
-      if (this.isEdit) {
-        this.update();
-      } else {
-        this.create();
-      }
-    },
-
-    // create
-    create() {
-      try {
-        const formData = new FormData();
-        formData.append("title", this.title);
-        formData.append("credits", this.credits);
-        formData.append("order", this.order);
-        formData.append("description", this.description);
-        formData.append("videos", JSON.stringify({ vimeoId: this.videoId }));
-
-        for (const photo of this.selectedImages) {
-          formData.append("photos[]", photo.file);
-        }
-        const photoInfo = JSON.stringify(
-          this.selectedImages.map(v => ({
-            isPreview: v.isPreview,
-            fileName: v.file.name,
-            format: v.format,
-            order: v.order
-          }))
-        );
-        formData.append("photosInfo", photoInfo);
-        this.isLoading = true;
-        VideosRepository.create(formData)
-          .then(() => {
-            this.reset();
-            this.setServerStatusInUI(true);
-          })
-          .catch(e => {
-            // eslint-disable-next-line no-console
-            console.error("AddWork server ERROR", e);
-            this.setServerStatusInUI(false, e.response?.data?.message);
-          })
-          .finally(() => {
-            this.isLoading = false;
-            this.clientErrors = [];
-          });
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("AddWork ERROR", err);
-      }
-    },
-
-    // edit
-    setDataForEdit() {
-      this.title = this.work.title;
-      this.credits = this.work.credits;
-      this.description = this.work.description;
-      this.videoId = this.work.videos.vimeoId;
-      this.selectedImages = JSON.parse(JSON.stringify(this.work.photos));
-    },
-    update() {
-      const WORK = this.work;
-      const formData = new FormData();
-      const videos = JSON.stringify({ vimeoId: this.videoId });
-
-      // photos:
-      // new
-      const newPhotoInfo = this.selectedImages
-        .filter(v => {
-          if (v.file) {
-            formData.append("photos[]", v.file);
-            return true;
-          }
-          return false;
-        })
-        .map(v => ({
-          order: v.order,
-          format: v.format,
-          fileName: v.file.name,
-          isPreview: v.isPreview
-        }));
-      // deleted
-      const deletedPhotoIds =
-        WORK.deletedPhotoIds?.map(id => id || id === 0) || [];
-      // updated
-      const updatePhotoInfo =
-        this.selectedImages?.filter((v, idx) => {
-          const isNew = v.file; // means new photo
-          const current = JSON.stringify(v);
-          const existing = JSON.stringify(WORK.photos[idx]);
-          const isUpdated = current != existing;
-          return isUpdated && !isNew;
-        }) || [];
-      // existing
-      const existingPhotoInfo = WORK.photos.filter(exphoto => {
-        const isUpdated = Array.from(updatePhotoInfo).some(
-          upphoto => upphoto.id === exphoto.id
-        );
-        return !isUpdated;
-      });
-      // payload
-      const photosInfo = {
-        new: newPhotoInfo,
-        existing: existingPhotoInfo,
-        deleted: deletedPhotoIds,
-        updated: updatePhotoInfo
-      };
-
-      // formData:
-      formData.append("id", WORK.id);
-      formData.append("title", this.title);
-      formData.append("videos", videos);
-      formData.append("credits", this.credits);
-      formData.append("order", this.order);
-      formData.append("description", this.description);
-      formData.append("photosInfo", JSON.stringify(photosInfo));
-
-      this.isLoading = true;
-      VideosRepository.update(formData)
-        .then(() => {
-          this.reset();
-          this.setServerStatusInUI(true);
-        })
-        .catch(e => {
-          // eslint-disable-next-line no-console
-          console.info("Update work ERROR", e);
-          this.setServerStatusInUI(false, e.response.statusText);
-        })
-        .finally(() => {
-          this.isLoading = false;
-        });
-    },
-    deleteExistingImage(id) {
-      // this.work.photos = this.work.photos.filter(v => v.id != id);
-      this.selectedImages = this.selectedImages.filter(v => v.id != id);
-      if (!id) {
-        return;
-      }
-      if (this.work.deletedPhotoIds) {
-        this.work.deletedPhotoIds.push(id);
-      } else {
-        this.work.deletedPhotoIds = [];
-        this.work.deletedPhotoIds.push(id);
-      }
-    }
-  },
-  mounted() {
-    if (this.isEdit) {
-      this.setDataForEdit();
-    }
-    this.setOrder();
-  }
+const rules = {
+  title: { required, minLength: minLength(2) },
+  videoId: { required, minLength: minLength(9), maxLength: maxLength(20) },
 };
+const v$ = useVuelidate(rules, { title, videoId });
+
+const previewWork = computed(() => {
+  const base = { title: title.value, credits: credits.value, description: description.value, videos: { vimeoId: videoId.value } };
+  if (props.isEdit) return { ...base, photos: [...selectedImages.value] };
+  const workPhotos = props.work?.photos ? (props.work.photos as unknown[]) : [];
+  return { ...base, photos: [...selectedImages.value, ...workPhotos] };
+});
+
+const worksLength = computed(() => {
+  if (!props.works) return [];
+  const arr = (props.works as Record<string, unknown>[]).map((v) => v.order as number);
+  const len = arr?.length ? Math.max(...arr) + 2 : 1;
+  return Array.from({ length: len });
+});
+
+const getMaxOrderNumber = computed(() => {
+  const orders = selectedImages.value?.map((v) => +(v.order as number));
+  return Math.max(...orders);
+});
+
+const wholeWorkOrders = computed(() => {
+  return Array.from({ length: getMaxOrderNumber.value + 1 || 1 });
+});
+
+watch(() => props.work, () => { if (props.isEdit) setDataForEdit(); });
+
+function reset() {
+  title.value = "";
+  description.value = "";
+  credits.value = "";
+  videoId.value = "";
+  order.value = null;
+  selectedImages.value = [];
+  emit("resetForm");
+}
+
+async function getFiles() {
+  const files = filesInput.value?.files;
+  if (!files) return;
+  let idx = selectedImages.value?.length ?? 0;
+  for (const file of Array.from(files)) {
+    const resolution = await getHeightAndWidthFromDataUrl(file);
+    const format = resolution.height > resolution.width ? "vertical" : "horizontal";
+    selectedImages.value.push({ file, order: idx, isPreview: false, format, src: URL.createObjectURL(file) });
+    idx++;
+  }
+}
+
+function removeSelectedImage(src: unknown) {
+  selectedImages.value = selectedImages.value.filter((v) => v.src !== src);
+}
+
+function setOrder() {
+  if (props.isEdit && props.work) {
+    order.value = props.work.order;
+  } else if (props.works) {
+    order.value = props.works.length;
+  }
+}
+
+function setServerStatusInUI(isOk: boolean, statusText?: string) {
+  if (isOk) {
+    isSuccess.value = true;
+    setTimeout(() => { isSuccess.value = false; emit("work-create-successfully"); }, 10_000);
+    serverError.value = null;
+  } else {
+    serverError.value = statusText ?? null;
+    setTimeout(() => { serverError.value = null; }, 20_000);
+  }
+}
+
+function getName(file: Record<string, unknown>): string {
+  return `${file.src}`.split("/").pop() ?? "";
+}
+
+function getSize(sizeInByte: number): string {
+  let name = "Kb";
+  let size: string | number = Math.floor(sizeInByte / 1024);
+  if (size >= 1024) { name = "Mb"; size = (size / 1024).toFixed(2); }
+  return `${size} ${name}`;
+}
+
+async function submit() {
+  clientErrors.value = [];
+  v$.value.$touch();
+  if (v$.value.$invalid) return;
+
+  const imgs = Array.from(selectedImages.value);
+  if (imgs.length) {
+    if (!imgs.some((v) => v.isPreview)) {
+      clientErrors.value.push("Please choose preview image for the work"); return;
+    }
+  } else {
+    clientErrors.value.push("Please select at least one image"); return;
+  }
+
+  if (props.isEdit) { update(); } else { create(); }
+}
+
+function create() {
+  try {
+    const formData = new FormData();
+    formData.append("title", title.value);
+    formData.append("credits", credits.value);
+    formData.append("order", String(order.value));
+    formData.append("description", description.value);
+    formData.append("videos", JSON.stringify({ vimeoId: videoId.value }));
+    for (const photo of selectedImages.value) formData.append("photos[]", photo.file as File);
+    formData.append("photosInfo", JSON.stringify(
+      selectedImages.value.map((v) => ({ isPreview: v.isPreview, fileName: (v.file as File).name, format: v.format, order: v.order }))
+    ));
+    isLoading.value = true;
+    VideosRepository.create(formData)
+      .then(() => { reset(); setServerStatusInUI(true); })
+      .catch((e: unknown) => { console.error(e); setServerStatusInUI(false, (e as { response?: { data?: { message?: string } } })?.response?.data?.message); })
+      .finally(() => { isLoading.value = false; clientErrors.value = []; });
+  } catch (err) { console.error("AddWork ERROR", err); }
+}
+
+function setDataForEdit() {
+  if (!props.work) return;
+  title.value = props.work.title as string;
+  credits.value = props.work.credits as string;
+  description.value = props.work.description as string;
+  videoId.value = (props.work.videos as { vimeoId: string }).vimeoId;
+  selectedImages.value = JSON.parse(JSON.stringify(props.work.photos));
+}
+
+function update() {
+  const WORK = props.work!;
+  const formData = new FormData();
+  const videos = JSON.stringify({ vimeoId: videoId.value });
+  const oldPhotos = Array.from(WORK.photos as Record<string, unknown>[]);
+
+  const newPhotoInfo = selectedImages.value.filter((v) => {
+    if (v.file) { formData.append("photos[]", v.file as File); return true; }
+    return false;
+  }).map((v) => ({ order: v.order, format: v.format, fileName: (v.file as File).name, isPreview: v.isPreview }));
+
+  const deletedPhotoIds = (WORK.deletedPhotoIds as unknown[] | undefined)?.map((id) => id || id === 0) ?? [];
+
+  const updatePhotoInfo = selectedImages.value.filter((v, idx) => {
+    const isNew = v.file;
+    const isUpdated = JSON.stringify(v) !== JSON.stringify(oldPhotos[idx]);
+    return isUpdated && !isNew;
+  }) ?? [];
+
+  const existingPhotoInfo = oldPhotos.filter((ex) => !updatePhotoInfo.some((up) => up.id === ex.id));
+
+  formData.append("id", String(WORK.id));
+  formData.append("title", title.value);
+  formData.append("videos", videos);
+  formData.append("credits", credits.value);
+  formData.append("order", String(order.value));
+  formData.append("description", description.value);
+  formData.append("photosInfo", JSON.stringify({ new: newPhotoInfo, existing: existingPhotoInfo, deleted: deletedPhotoIds, updated: updatePhotoInfo }));
+
+  isLoading.value = true;
+  VideosRepository.update(formData)
+    .then(() => { reset(); setServerStatusInUI(true); })
+    .catch((e: unknown) => { console.info("Update work ERROR", e); setServerStatusInUI(false, (e as { response?: { statusText?: string } })?.response?.statusText); })
+    .finally(() => { isLoading.value = false; });
+}
+
+function deleteExistingImage(id: unknown) {
+  selectedImages.value = selectedImages.value.filter((v) => v.id !== id);
+  if (!id) return;
+  const work = props.work as Record<string, unknown>;
+  if (work.deletedPhotoIds) {
+    (work.deletedPhotoIds as unknown[]).push(id);
+  } else {
+    work.deletedPhotoIds = [id];
+  }
+}
+
+onMounted(() => {
+  if (props.isEdit) setDataForEdit();
+  setOrder();
+});
 </script>

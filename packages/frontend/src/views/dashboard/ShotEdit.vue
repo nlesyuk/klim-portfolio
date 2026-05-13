@@ -7,21 +7,17 @@
           Linked to post-id: {{ shot.workId }}
         </div>
 
-        <button type="button" v-if="shot.src" @click="removeImage">
-          delete
-        </button>
+        <button type="button" v-if="shot.src" @click="removeImage">delete</button>
 
         <img v-if="shot.src" :src="shot.src" alt="preview" />
         <div v-else>
           <span>Please upload shots</span>
-          <input type="file" @change="getFiles" ref="file" />
+          <input type="file" @change="getFiles" ref="fileInput" />
         </div>
 
         <div class="dashboard__select">
           <select v-model="shot.workId">
-            <option disabled selected value="null">
-              Please linking the Shot to the Work
-            </option>
+            <option disabled selected value="null">Please linking the Shot to the Work</option>
             <option v-for="(item, idx) of videos" :key="idx" :value="item.id">
               {{ item.title }}
             </option>
@@ -34,50 +30,28 @@
           v-for="(category, idx) of myCategories"
           :key="idx"
         >
-          <template>
-            <input
-              type="checkbox"
-              v-model="shot.categories"
-              :value="category.name"
-              :disabled="category.isDisabled"
-            />
-            <span class="inline">{{ category.name }}</span>
-          </template>
+          <input
+            type="checkbox"
+            v-model="shot.categories"
+            :value="category.name"
+            :disabled="category.isDisabled"
+          />
+          <span class="inline">{{ category.name }}</span>
         </label>
 
         <label class="dashboard__label mb0">
-          <input
-            type="radio"
-            name="format"
-            value="vertical"
-            v-model="shot.format"
-          />
+          <input type="radio" name="format" value="vertical" v-model="shot.format" />
           <span class="inline">vertical</span>
         </label>
         <label class="dashboard__label">
-          <input
-            type="radio"
-            name="format"
-            value="horizontal"
-            v-model="shot.format"
-          />
+          <input type="radio" name="format" value="horizontal" v-model="shot.format" />
           <span class="inline">horizontal</span>
         </label>
 
-        <button
-          type="button"
-          @click="update"
-          class="dashboard__submit"
-          :disabled="isLoading"
-        >
+        <button type="button" @click="update" class="dashboard__submit" :disabled="isLoading">
           Update shot
         </button>
-        <button
-          type="button"
-          @click="close"
-          class="dashboard__submit"
-          :disabled="isLoading"
-        >
+        <button type="button" @click="emit('close')" class="dashboard__submit" :disabled="isLoading">
           Close
         </button>
         <Spiner v-if="isLoading" :isCenter="false" />
@@ -86,104 +60,72 @@
     <p v-else class="dashboard__badge badge-red">Something went wrong</p>
   </div>
 </template>
-<script>
-import { mapState } from "vuex";
-import { getHeightAndWidthFromDataUrl } from "../../helper";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
+
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { getHeightAndWidthFromDataUrl } from "@/helper/index";
+import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import { useShotsStore } from "@/stores/shots";
+import Spiner from "@/components/Spiner.vue";
+
 const ShotRepository = RepositoryFactory.get("shots");
+const shotsStore = useShotsStore();
 
-export default {
-  props: {
-    shot: {
-      type: Object,
-      required: true
-    },
-    videos: {
-      required: true
-    }
-  },
-  computed: {
-    ...mapState({
-      categories: state => state.shots.categories
-    }),
-    myCategories() {
-      if (
-        this.shot.categories.includes("all") &&
-        this.shot.categories.length != 1
-      ) {
-        return Array.from(this.categories).map(name => ({
-          name,
-          isDisabled: name != "all"
-        }));
-      }
-      return Array.from(this.categories).map(name => ({
-        name,
-        isDisabled: false
-      }));
-    }
-  },
-  data() {
-    return {
-      isLoading: false
-    };
-  },
-  methods: {
-    removeImage() {
-      this.shot.src = "";
-    },
-    getFiles() {
-      const files = this.$refs.file.files;
-      Array.from(files).forEach(file => {
-        getHeightAndWidthFromDataUrl(file).then(res => {
-          this.shot.format = res.height > res.width ? "vertical" : "horizontal";
-          this.shot.src = URL.createObjectURL(file);
-          this.shot.file = file;
-        });
-      });
-    },
-    async update() {
-      this.isLoading = true;
-      const { id, src, workId, categories, format, file } = this.shot;
-      let shotCategories = "";
-      if (Array.from(categories).some(v => v === "all")) {
-        shotCategories = ["all"];
-      } else {
-        shotCategories = Array.from(categories).filter(v => v != "all");
-      }
+const props = defineProps<{ shot: Record<string, unknown>; videos: unknown[] }>();
+const emit = defineEmits<{ close: [] }>();
 
-      try {
-        const formData = new FormData();
-        formData.append("id", id);
-        formData.append("format", format);
-        formData.append("workId", workId);
-        formData.append("categories", JSON.stringify(shotCategories));
-        if (file) {
-          formData.append("photos[]", file);
-        } else {
-          formData.append("src", src);
-        }
+const isLoading = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
 
-        const data = {};
-        for (const pair of formData.entries()) {
-          data[pair[0]] = pair[1];
-        }
-
-        await ShotRepository.update(formData);
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    close() {
-      this.$emit("close");
-    },
-    leaveAll() {
-      this.shot.categories = ["all"];
-
-      return false;
-    }
+const myCategories = computed(() => {
+  const cats = shotsStore.categories as string[];
+  const shotCats = props.shot.categories as string[];
+  if (shotCats.includes("all") && shotCats.length !== 1) {
+    return cats.map((name) => ({ name, isDisabled: name !== "all" }));
   }
-};
+  return cats.map((name) => ({ name, isDisabled: false }));
+});
+
+function removeImage() {
+  props.shot.src = "";
+}
+
+function getFiles() {
+  const files = fileInput.value?.files;
+  if (!files) return;
+  Array.from(files).forEach((file) => {
+    getHeightAndWidthFromDataUrl(file).then((res) => {
+      props.shot.format = res.height > res.width ? "vertical" : "horizontal";
+      props.shot.src = URL.createObjectURL(file);
+      props.shot.file = file;
+    });
+  });
+}
+
+async function update() {
+  isLoading.value = true;
+  const { id, src, workId, categories, format, file } = props.shot as Record<string, unknown>;
+  const cats = categories as string[];
+  const shotCategories = cats.some((v) => v === "all")
+    ? ["all"]
+    : cats.filter((v) => v !== "all");
+
+  try {
+    const formData = new FormData();
+    formData.append("id", String(id));
+    formData.append("format", String(format));
+    formData.append("workId", String(workId));
+    formData.append("categories", JSON.stringify(shotCategories));
+    if (file) {
+      formData.append("photos[]", file as File);
+    } else {
+      formData.append("src", String(src));
+    }
+    await ShotRepository.update(formData);
+  } catch (e) {
+    console.error(e);
+  } finally {
+    isLoading.value = false;
+  }
+}
 </script>

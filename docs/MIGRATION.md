@@ -99,19 +99,19 @@ Decouple build migration from framework migration so each step is verifiable.
 
 ---
 
-## Phase 3 — Replace blocker deps (≈3–4 days) 🔄 IN PROGRESS
+## Phase 3 — Replace blocker deps (≈3–4 days) ✅ DONE
 
 Tackle in this order — least to most risky:
 
 1. ✅ **`node-sass` cleanup** — replaced with `sass` (dart-sass).
-2. ⬜ **Vuelidate → `@vuelidate/core`** — rewrite affected forms (`Login.vue`, `Contact.vue`, dashboard add/edit views) using `useVuelidate` in composition style.
-3. ⬜ **Hooper → Swiper v11** in `src/components/Slides.vue`. Update slide template structure.
-4. ⬜ **vue2-editor → Tiptap** in dashboard editor views. Define a small wrapper component to isolate the swap.
+2. ✅ **Vuelidate → `@vuelidate/core`** — `useVuelidate` in `Contacts.vue`, `SlideAdd.vue`, `PhotoAdd.vue`, `WorkAdd.vue`.
+3. ✅ **Hooper → Swiper v11** in `src/views/Slider.vue` — `Swiper`/`SwiperSlide`, `Navigation`/`Pagination`/`Autoplay` modules.
+4. ✅ **vue2-editor → Tiptap** — `src/components/RichEditor.vue` wrapper (`@tiptap/vue-3` + `StarterKit`); dropped in all dashboard editor views.
 5. ✅ **vue-stripe-menu replacement** in `src/components/Nav.vue` — custom CSS dropdown with scoped SCSS, hover/click behavior on desktop, hamburger on mobile. `$options.isPhotographerMode` refactored into `useSiteMode()` composable.
 6. ✅ **PWA:** `vite-plugin-pwa` wired in `vite.config.ts`; `registerServiceWorker.ts` replaced with stub.
 
 **Exit criteria:** All blocker deps removed from `package.json`; affected components render and behave at parity.
-> 🔄 Remaining: Vuelidate forms, Swiper (Slides.vue), Tiptap (dashboard editors).
+> ✅ Done.
 
 ---
 
