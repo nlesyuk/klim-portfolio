@@ -185,7 +185,7 @@ Delete `src/store/` after all consumers are converted.
 
 ---
 
-## Phase 6 — Server-state → TanStack Query (≈2–3 days) ⬜ TODO
+## Phase 6 — Server-state → TanStack Query (≈2–3 days) ✅ DONE
 
 Replace the manual `RepositoryFactory` + Pinia server-state pattern with `@tanstack/vue-query` v5.
 Axios stays as the HTTP client; TanStack Query takes over caching, loading/error state, and background refetching.

@@ -23,34 +23,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
+import { useQueryClient } from "@tanstack/vue-query";
 import WorkAdd from "./WorkAdd.vue";
 import WorksGrid from "@/components/WorksGrid.vue";
 import Spiner from "@/components/Spiner.vue";
-import { useVideosStore } from "@/stores/videos";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import { useVideosQuery, useDeleteVideo } from "@/composables/useVideos";
+import { queryKeys } from "@/queries/keys";
 
-const VideosRepository = RepositoryFactory.get("videos");
-const videosStore = useVideosStore();
+const qc = useQueryClient();
+const { data } = useVideosQuery();
+const { mutate: deleteVideo } = useDeleteVideo();
 
 const work = ref<unknown>(null);
 const isEdit = ref(false);
 const isShowAddWork = ref(false);
 
-const videos = computed(() => videosStore.videos);
+const videos = computed(() => data.value);
 
-function refresh() { videosStore.getAllVideos(); }
+function refresh() { qc.invalidateQueries({ queryKey: queryKeys.videos() }); }
 
 function onEdit(id: unknown) {
   isEdit.value = true;
-  const item = (videosStore.videos as Record<string, unknown>[] | null)?.filter((v) => v.id === id);
+  const item = (data.value as Record<string, unknown>[] | undefined)?.filter((v) => v.id === id);
   work.value = item?.length ? item[0] : null;
   isShowAddWork.value = true;
 }
 
-function onDelete(id: unknown) { VideosRepository.delete(id); }
-
-onMounted(() => {
-  if (!videosStore.videos) videosStore.getAllVideos();
-});
+function onDelete(id: unknown) { deleteVideo(id); }
 </script>

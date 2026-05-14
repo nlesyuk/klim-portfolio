@@ -16,9 +16,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import Nav from "./Nav.vue";
-import { useGeneralStore } from "@/stores/general";
+import { useContactsQuery } from "@/composables/useContacts";
 import { isCinematographerMode } from "@/helper/constants";
 
-const store = useGeneralStore();
-const contacts = computed(() => store.contacts as Record<string, string> | null);
+const { data } = useContactsQuery();
+const contacts = computed(() => data.value as Record<string, string> | undefined);
 </script>

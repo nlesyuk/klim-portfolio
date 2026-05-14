@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import type { Swiper as SwiperClass } from "swiper";
@@ -30,14 +30,14 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import SlideComponent from "@/components/Slide.vue";
-import { useSlidesStore } from "@/stores/slides";
+import { useSlidesQuery } from "@/composables/useSlides";
 
-const slidesStore = useSlidesStore();
+const { data } = useSlidesQuery();
 const currentSlide = ref(0);
 const modules = [Navigation, Pagination, Autoplay];
 
 const sortedSlides = computed(() => {
-  const slides = slidesStore.slides as Array<Record<string, unknown>> | null;
+  const slides = data.value as Array<Record<string, unknown>> | undefined;
   if (!slides) return [];
   return [...slides].sort((a, b) => (b.order as number) - (a.order as number));
 });
@@ -45,11 +45,4 @@ const sortedSlides = computed(() => {
 function onSlideChange(swiper: SwiperClass) {
   currentSlide.value = swiper.activeIndex;
 }
-
-onMounted(async () => {
-  if (!slidesStore.slides) {
-    await slidesStore.getSlides();
-    currentSlide.value = 1;
-  }
-});
 </script>

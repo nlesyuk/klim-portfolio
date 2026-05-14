@@ -154,11 +154,12 @@ import { required, minLength, maxLength } from "@vuelidate/validators";
 import Work from "@/views/Work.vue";
 import RichEditor from "@/components/RichEditor.vue";
 import Spiner from "@/components/Spiner.vue";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
-import { getHeightAndWidthFromDataUrl, getName } from "@/helper/index";
+import { useCreateVideo, useUpdateVideo } from "@/composables/useVideos";
+import { getHeightAndWidthFromDataUrl } from "@/helper/index";
 import { allowedImageSizeInKb } from "@/helper";
 
-const VideosRepository = RepositoryFactory.get("videos");
+const { mutateAsync: createVideo } = useCreateVideo();
+const { mutateAsync: updateVideo } = useUpdateVideo();
 
 const props = defineProps<{
   work?: Record<string, unknown>;
@@ -301,7 +302,7 @@ function create() {
       selectedImages.value.map((v) => ({ isPreview: v.isPreview, fileName: (v.file as File).name, format: v.format, order: v.order }))
     ));
     isLoading.value = true;
-    VideosRepository.create(formData)
+    createVideo(formData)
       .then(() => { reset(); setServerStatusInUI(true); })
       .catch((e: unknown) => { console.error(e); setServerStatusInUI(false, (e as { response?: { data?: { message?: string } } })?.response?.data?.message); })
       .finally(() => { isLoading.value = false; clientErrors.value = []; });
@@ -347,7 +348,7 @@ function update() {
   formData.append("photosInfo", JSON.stringify({ new: newPhotoInfo, existing: existingPhotoInfo, deleted: deletedPhotoIds, updated: updatePhotoInfo }));
 
   isLoading.value = true;
-  VideosRepository.update(formData)
+  updateVideo(formData)
     .then(() => { reset(); setServerStatusInUI(true); })
     .catch((e: unknown) => { console.info("Update work ERROR", e); setServerStatusInUI(false, (e as { response?: { statusText?: string } })?.response?.statusText); })
     .finally(() => { isLoading.value = false; });

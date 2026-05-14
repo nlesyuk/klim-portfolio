@@ -126,11 +126,12 @@ import { required, minLength, maxLength } from "@vuelidate/validators";
 import PhotosGrid from "@/components/PhotosGrid.vue";
 import RichEditor from "@/components/RichEditor.vue";
 import Spiner from "@/components/Spiner.vue";
-import { usePhotosStore } from "@/stores/photos";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import { usePhotosQuery, useCreatePhoto, useUpdatePhoto } from "@/composables/usePhotos";
+import { categories as photoCategoriesAll } from "@/helper/constants";
 
-const PhotosRepository = RepositoryFactory.get("photos");
-const photosStore = usePhotosStore();
+const { data: photosData } = usePhotosQuery();
+const { mutateAsync: createPhoto } = useCreatePhoto();
+const { mutateAsync: updatePhoto } = useUpdatePhoto();
 
 const props = defineProps<{
   photoCollection?: Record<string, unknown>;
@@ -162,10 +163,10 @@ const rules = {
 const v$ = useVuelidate(rules, { title, videoId });
 
 const categories = computed(() =>
-  photosStore.photoCategories.filter((v) => v !== "all")
+  photoCategoriesAll.filter((v: string) => v !== "all")
 );
 
-const allPhotos = computed(() => photosStore.photos);
+const allPhotos = computed(() => photosData.value);
 
 const allPhotoCollections = computed(() => {
   const count = Array.from(allPhotos.value ?? []).length;
@@ -259,7 +260,7 @@ function create() {
       }))
     ));
     isLoading.value = true;
-    PhotosRepository.create(formData)
+    createPhoto(formData)
       .then(() => { reset(); setServerStatusInUI(true); })
       .catch((e: unknown) => { console.error(e); setServerStatusInUI(false, (e as { response?: { data?: { message?: string } } })?.response?.data?.message); })
       .finally(() => { isLoading.value = false; clientErrors.value = []; });
@@ -311,7 +312,7 @@ function update() {
     if (choosedCategories.value) formData.append("categories", JSON.stringify(choosedCategories.value));
 
     isLoading.value = true;
-    PhotosRepository.update(formData)
+    updatePhoto(formData)
       .then(() => { setServerStatusInUI(true); })
       .catch((e: unknown) => { console.error(e); setServerStatusInUI(false, (e as { response?: { statusText?: string } })?.response?.statusText); })
       .finally(() => { isLoading.value = false; });
@@ -320,7 +321,6 @@ function update() {
 
 onMounted(() => {
   if (props.isEdit) setDataForEdit();
-  if (!photosStore.photos) photosStore.getPhotos();
 });
 </script>
 

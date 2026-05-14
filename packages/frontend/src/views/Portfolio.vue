@@ -20,21 +20,18 @@ import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import PhotoPreview from "@/components/PhotoPreview.vue";
 import Spiner from "@/components/Spiner.vue";
-import { usePhotosStore } from "@/stores/photos";
+import { usePhotosQuery } from "@/composables/usePhotos";
 import { setTitle } from "@/helper";
 
 const route = useRoute();
-const photosStore = usePhotosStore();
+const { data } = usePhotosQuery();
 
 const allPhotos = computed(() => {
-  const photos = photosStore.photos as Record<string, unknown>[] | null;
+  const photos = data.value as Record<string, unknown>[] | undefined;
   const category = route.query.filter as string | undefined;
   if (category === "all" || !category) return photos;
   return photos?.filter((item) => (item.categories as string[] | undefined)?.includes(category)) ?? photos;
 });
 
-onMounted(() => {
-  setTitle("Portfolio");
-  if (!photosStore.photos) photosStore.getPhotos();
-});
+onMounted(() => { setTitle("Portfolio"); });
 </script>

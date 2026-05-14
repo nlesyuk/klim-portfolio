@@ -19,20 +19,19 @@
 import { computed, onMounted } from "vue";
 import PhotoPreview from "@/components/PhotoPreview.vue";
 import Spiner from "@/components/Spiner.vue";
-import { usePhotosStore } from "@/stores/photos";
+import { usePhotosQuery } from "@/composables/usePhotos";
 import { isCinematographerMode } from "@/helper/constants";
 import { setTitle } from "@/helper";
 
-const photosStore = usePhotosStore();
+const { data } = usePhotosQuery();
 
-const photos = computed(() =>
-  isCinematographerMode
-    ? photosStore.cinematographerPhotos
-    : photosStore.photographerPhotos
-);
-
-onMounted(() => {
-  setTitle("Photos");
-  if (!photosStore.photos) photosStore.getPhotos();
+const photos = computed(() => {
+  const all = data.value as Record<string, unknown>[] | undefined;
+  if (!all) return undefined;
+  return isCinematographerMode
+    ? all
+    : all.filter((item) => (item.categories as string[] | undefined)?.includes("personal"));
 });
+
+onMounted(() => { setTitle("Photos"); });
 </script>

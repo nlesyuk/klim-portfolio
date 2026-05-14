@@ -18,25 +18,22 @@ import Header from "./components/Header.vue";
 import Footer from "./components/Footer.vue";
 import SvgSprite from "./components/SVG-sprite.vue";
 import { useAuthStore } from "@/stores/auth";
-import { useGeneralStore } from "@/stores/general";
+import { useContactsQuery } from "@/composables/useContacts";
 import { themeInstance, themes } from "@/helper";
 
 const TheDashboardNav = defineAsyncComponent(() => import("./views/dashboard/TheDashboardNav.vue"));
 
 const authStore = useAuthStore();
-const generalStore = useGeneralStore();
+const { theme } = useContactsQuery();
 
 const loggedIn = computed(() => authStore.loggedIn);
 
-watch(
-  () => generalStore.theme,
-  (themeName) => {
-    if (themeName && themes.includes(themeName as string)) {
-      themeInstance.setInLS(themeName as string);
-      themeInstance.init();
-    }
+watch(theme, (themeName) => {
+  if (themeName && themes.includes(themeName as string)) {
+    themeInstance.setInLS(themeName as string);
+    themeInstance.init();
   }
-);
+});
 
 onMounted(() => { themeInstance.init(); });
 </script>

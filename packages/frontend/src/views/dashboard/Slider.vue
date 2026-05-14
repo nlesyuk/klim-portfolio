@@ -24,27 +24,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
+import { useQueryClient } from "@tanstack/vue-query";
 import SlideAdd from "./SlideAdd.vue";
 import Slides from "@/components/Slides.vue";
 import Spiner from "@/components/Spiner.vue";
-import { useSlidesStore } from "@/stores/slides";
-import { useVideosStore } from "@/stores/videos";
-import { usePhotosStore } from "@/stores/photos";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import { useSlidesQuery, useDeleteSlide } from "@/composables/useSlides";
+import { useVideosQuery } from "@/composables/useVideos";
+import { usePhotosQuery } from "@/composables/usePhotos";
+import { queryKeys } from "@/queries/keys";
 
-const SlidesRepository = RepositoryFactory.get("slides");
-const slidesStore = useSlidesStore();
-const videosStore = useVideosStore();
-const photosStore = usePhotosStore();
+const qc = useQueryClient();
+const { data: slidesData } = useSlidesQuery();
+const { data: videosData } = useVideosQuery();
+const { data: photosData } = usePhotosQuery();
+const { mutate: deleteSlide } = useDeleteSlide();
 
 const slide = ref<unknown>(null);
 const isEdit = ref(false);
 const isShowAddSlide = ref(false);
 
-const slides = computed(() => slidesStore.slides as Record<string, unknown>[] | null);
-const videos = computed(() => videosStore.videos as Record<string, unknown>[] | null);
-const photos = computed(() => photosStore.photos as Record<string, unknown>[] | null);
+const slides = computed(() => slidesData.value as Record<string, unknown>[] | undefined);
+const videos = computed(() => videosData.value as Record<string, unknown>[] | undefined);
+const photos = computed(() => photosData.value as Record<string, unknown>[] | undefined);
 
 const sortedSlides = computed(() => {
   const s = slides.value;
@@ -52,13 +54,9 @@ const sortedSlides = computed(() => {
   return [...s].sort((a, b) => (b.order as number) - (a.order as number));
 });
 
-function onRefresh() { slidesStore.getSlides(); }
+function onRefresh() { qc.invalidateQueries({ queryKey: queryKeys.slides() }); }
 
-function onDelete(id: unknown) {
-  SlidesRepository.delete(id)
-    .then(() => slidesStore.getSlides())
-    .catch((err: unknown) => console.error(err));
-}
+function onDelete(id: unknown) { deleteSlide(id); }
 
 function onEdit(id: unknown) {
   isEdit.value = true;
@@ -66,10 +64,4 @@ function onEdit(id: unknown) {
   slide.value = item?.length ? item[0] : null;
   isShowAddSlide.value = true;
 }
-
-onMounted(() => {
-  if (!slidesStore.slides) slidesStore.getSlides();
-  if (!videosStore.videos) videosStore.getAllVideos();
-  if (!photosStore.photos) photosStore.getPhotos();
-});
 </script>

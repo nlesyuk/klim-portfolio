@@ -37,15 +37,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { useGeneralStore } from "@/stores/general";
+import { useContactsQuery } from "@/composables/useContacts";
 import { setTitle } from "@/helper";
 
 const route = useRoute();
-const generalStore = useGeneralStore();
+const { data } = useContactsQuery();
 
 const isActivateCalendar = ref(false);
 
-const contacts = computed(() => generalStore.contacts as Record<string, unknown> | null);
+const contacts = computed(() => data.value as Record<string, unknown> | undefined);
 const image = computed(() => contacts.value?.image as string | undefined);
 const phone = computed(() => {
   if (!contacts.value?.phone) return null;
@@ -61,7 +61,6 @@ const description = computed(() => {
 
 onMounted(() => {
   setTitle("Contact");
-  if (!generalStore.contacts) generalStore.fetchContacts();
   if (route.query.calendar === "on") {
     isActivateCalendar.value = true;
     setTitle("Calendar");

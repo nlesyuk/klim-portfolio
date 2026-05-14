@@ -10,6 +10,7 @@
     "lint": "eslint 'src/**/*.{ts,vue}' --fix"
   },
   "dependencies": {
+    "@tanstack/vue-query": "^5.100.10",
     "@tiptap/core": "^2.4.0",
     "@tiptap/starter-kit": "^2.4.0",
     "@tiptap/vue-3": "^2.4.0",

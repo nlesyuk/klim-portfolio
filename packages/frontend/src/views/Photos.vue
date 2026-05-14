@@ -20,26 +20,25 @@ import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import PhotoPreview from "@/components/PhotoPreview.vue";
 import Spiner from "@/components/Spiner.vue";
-import { usePhotosStore } from "@/stores/photos";
+import { usePhotosQuery } from "@/composables/usePhotos";
 import { isCinematographerMode } from "@/helper/constants";
 import { setTitle } from "@/helper";
 
 const route = useRoute();
-const photosStore = usePhotosStore();
+const { data } = usePhotosQuery();
 
 const photos = computed(() => {
+  const all = data.value as Record<string, unknown>[] | undefined;
+  if (!all) return undefined;
   const base = isCinematographerMode
-    ? photosStore.cinematographerPhotos
-    : photosStore.photographerPhotos;
-  const sorted = base ? [...(base as Record<string, unknown>[])].sort((a, b) => (b.order as number) - (a.order as number)) : [];
+    ? all
+    : all.filter((item) => (item.categories as string[] | undefined)?.includes("personal"));
+  const sorted = [...base].sort((a, b) => (b.order as number) - (a.order as number));
   if (route.name === "commerce") {
     return sorted.filter((item) => (item.categories as string[] | undefined)?.includes("commerce"));
   }
   return sorted;
 });
 
-onMounted(() => {
-  setTitle("Photos");
-  if (!photosStore.photos) photosStore.getPhotos();
-});
+onMounted(() => { setTitle("Photos"); });
 </script>

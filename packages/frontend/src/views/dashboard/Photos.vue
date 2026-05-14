@@ -34,18 +34,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
+import { useQueryClient } from "@tanstack/vue-query";
 import PhotoAdd from "./PhotoAdd.vue";
 import PhotoPreview from "@/components/PhotoPreview.vue";
 import Spiner from "@/components/Spiner.vue";
-import { usePhotosStore } from "@/stores/photos";
+import { usePhotosQuery, useDeletePhoto } from "@/composables/usePhotos";
+import { queryKeys } from "@/queries/keys";
 import { isCinematographerMode, isPhotographerMode } from "@/helper/constants";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
 
-const PhotosRepository = RepositoryFactory.get("photos");
-const photosStore = usePhotosStore();
 const route = useRoute();
+const qc = useQueryClient();
+const { data } = usePhotosQuery();
+const { mutate: deletePhoto } = useDeletePhoto();
 
 const isEdit = ref(false);
 const isManage = ref(true);
@@ -53,7 +55,7 @@ const isShowAddPhoto = ref(false);
 const photoCollection = ref<unknown>(null);
 const personal = ref(false);
 
-const allPhotos = computed(() => photosStore.photos as Record<string, unknown>[] | null);
+const allPhotos = computed(() => data.value as Record<string, unknown>[] | undefined);
 
 const photographerPhotos = computed(() => {
   if (personal.value) return allPhotos.value?.filter((v) => (v.categories as string[]).includes("personal"));
@@ -62,7 +64,7 @@ const photographerPhotos = computed(() => {
 
 const cinematographerPhotos = computed(() => {
   const p = allPhotos.value;
-  if (!p) return null;
+  if (!p) return undefined;
   const sorted = route.path.includes("commerce")
     ? p.filter((v) => (v.categories as string[]).includes("commerce"))
     : p;
@@ -72,8 +74,8 @@ const cinematographerPhotos = computed(() => {
 const photos = computed(() => isCinematographerMode ? cinematographerPhotos.value : photographerPhotos.value);
 const isPhotosEmpty = computed(() => !photos.value?.length);
 
-function remove(id: unknown) { PhotosRepository.delete(id); }
-function refresh() { photosStore.getPhotos(); }
+function remove(id: unknown) { deletePhoto(id); }
+function refresh() { qc.invalidateQueries({ queryKey: queryKeys.photos() }); }
 function getCategories(arr: unknown) {
   if (Array.isArray(arr)) return arr.join(", ");
   return arr;
@@ -84,10 +86,6 @@ function edit(id: unknown) {
   photoCollection.value = item?.length ? item[0] : null;
   isShowAddPhoto.value = true;
 }
-
-onMounted(() => {
-  if (!allPhotos.value) photosStore.getPhotos();
-});
 </script>
 
 <style></style>

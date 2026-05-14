@@ -132,9 +132,10 @@ import { required, minLength } from "@vuelidate/validators";
 import VimeoVideoPlayer from "@/components/VimeoVideoPlayer.vue";
 import Spiner from "@/components/Spiner.vue";
 import { getHeightAndWidthFromDataUrl } from "@/helper/index";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import { useCreateSlide, useUpdateSlide } from "@/composables/useSlides";
 
-const SlidesRepository = RepositoryFactory.get("slides");
+const { mutateAsync: createSlide } = useCreateSlide();
+const { mutateAsync: updateSlide } = useUpdateSlide();
 
 const props = defineProps<{
   slide?: Record<string, unknown>;
@@ -283,7 +284,7 @@ function create(isImage: boolean) {
     }
 
     isLoading.value = true;
-    SlidesRepository.create(formData)
+    createSlide(formData)
       .then(() => { reset(); setServerStatusInUI(true); })
       .catch((e: unknown) => {
         console.error(e);
@@ -330,7 +331,7 @@ function update(isImage: boolean) {
     }
 
     isLoading.value = true;
-    SlidesRepository.update(formData)
+    updateSlide(formData)
       .then(() => { reset(); setServerStatusInUI(true); })
       .catch((e: unknown) => {
         console.error(e);

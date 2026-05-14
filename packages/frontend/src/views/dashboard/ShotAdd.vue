@@ -46,16 +46,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import Spiner from "@/components/Spiner.vue";
-import { useShotsStore } from "@/stores/shots";
-import { useVideosStore } from "@/stores/videos";
+import { useCreateShot, shotCategories } from "@/composables/useShots";
+import { useVideosQuery } from "@/composables/useVideos";
 import { getHeightAndWidthFromDataUrl } from "@/helper";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
 
-const ShotsRepository = RepositoryFactory.get("shots");
-const shotsStore = useShotsStore();
-const videosStore = useVideosStore();
+const { mutateAsync: createShot } = useCreateShot();
+const { data: videosData } = useVideosQuery();
 
 const filesInput = ref<HTMLInputElement | null>(null);
 const isLoading = ref(false);
@@ -63,8 +61,8 @@ const isSuccess = ref(false);
 const serverError = ref<string | null>(null);
 const selectedImages = ref<Record<string, unknown>[]>([]);
 
-const videos = computed(() => videosStore.videos as Record<string, unknown>[] | null);
-const categories = computed(() => shotsStore.categories);
+const videos = computed(() => videosData.value as Record<string, unknown>[] | undefined);
+const categories = computed(() => shotCategories);
 const isAllowCreateShots = computed(() => {
   if (!selectedImages.value.length) return false;
   return selectedImages.value.every((file) => file.workId && (file.categories as string[]).length > 0);
@@ -100,7 +98,7 @@ async function submit() {
       return obj;
     });
     formData.append("shots", JSON.stringify(shots));
-    await ShotsRepository.create(formData);
+    await createShot(formData);
     isSuccess.value = true;
     reset();
   } catch (e) {
@@ -111,8 +109,4 @@ async function submit() {
     setTimeout(() => { isSuccess.value = false; }, 20_000);
   }
 }
-
-onMounted(() => {
-  if (!videosStore.videos) videosStore.getAllVideos();
-});
 </script>

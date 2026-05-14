@@ -24,49 +24,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PhotosGrid from "@/components/PhotosGrid.vue";
 import Spiner from "@/components/Spiner.vue";
-import { useShotsStore } from "@/stores/shots";
+import { useShotsQuery, shotCategories } from "@/composables/useShots";
 import { setTitle } from "@/helper";
 
 const route = useRoute();
 const router = useRouter();
-const shotsStore = useShotsStore();
-
-const toggle = ref(true);
-const filteredShots = ref<unknown[]>([]);
+const { data, isPending } = useShotsQuery();
 
 const filter = computed(() => route.query.filter as string | undefined);
-const categories = computed(() => shotsStore.categories);
+const categories = shotCategories;
+const toggle = computed(() => !isPending.value);
 
-watch(route, (r) => { applyFilter(r.query.filter as string | undefined); });
-
-function applyFilter(key: string | undefined) {
-  const all = shotsStore.shots as Record<string, unknown>[];
-  filteredShots.value = key === "all" || !key
-    ? all
-    : all.filter((item) => (item.categories as string[]).includes(key));
-}
+const filteredShots = computed<Record<string, unknown>[]>(() => {
+  const all = (data.value ?? []) as Record<string, unknown>[];
+  const key = filter.value;
+  if (!key || key === "all") return all;
+  return all.filter((item) => (item.categories as string[]).includes(key));
+});
 
 function changeFilter(f: string) {
-  toggle.value = false;
   if (route.query.filter !== f) {
     router.replace({ name: "shots", query: { filter: f } });
-    applyFilter(f);
-    setTimeout(() => { toggle.value = true; }, 300);
   }
 }
 
-onMounted(async () => {
-  setTitle("Shots");
-  if (!shotsStore.shots.length) {
-    const data = await shotsStore.getAllShots();
-    filteredShots.value = data ?? [];
-    if (filter.value) applyFilter(filter.value);
-  } else {
-    filteredShots.value = shotsStore.shots as unknown[];
-  }
-});
+onMounted(() => { setTitle("Shots"); });
 </script>

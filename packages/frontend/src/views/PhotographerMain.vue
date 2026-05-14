@@ -15,16 +15,16 @@ import { useRoute } from "vue-router";
 import PhotosPreviewGrid from "@/components/PhotosPreviewGrid.vue";
 import Slider from "@/views/Slider.vue";
 import Spiner from "@/components/Spiner.vue";
-import { usePhotosStore } from "@/stores/photos";
+import { usePhotosQuery } from "@/composables/usePhotos";
 import { setTitle } from "@/helper";
 
 const route = useRoute();
-const photosStore = usePhotosStore();
+const { data } = usePhotosQuery();
 
 const allPhotos = computed(() => {
-  const photos = photosStore.photos as Record<string, unknown>[] | null;
+  const photos = data.value as Record<string, unknown>[] | undefined;
   const category = route.query.filter as string | undefined;
-  const filtered: Record<string, Record<string, unknown>[] | null | undefined> = {
+  const filtered: Record<string, Record<string, unknown>[] | undefined> = {
     all: photos,
     automotive: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("automotive")),
     fashion: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("fashion")),
@@ -34,8 +34,5 @@ const allPhotos = computed(() => {
   return filtered[category ?? ""] ?? photos;
 });
 
-onMounted(() => {
-  setTitle("Portfolio");
-  if (!photosStore.photos) photosStore.getPhotos();
-});
+onMounted(() => { setTitle("Portfolio"); });
 </script>

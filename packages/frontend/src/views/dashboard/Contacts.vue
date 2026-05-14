@@ -70,19 +70,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, watch, onMounted } from "vue";
 import useVuelidate from "@vuelidate/core";
 import { required } from "@vuelidate/validators";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
-import { useGeneralStore } from "@/stores/general";
-import { getName } from "@/helper/index";
+import { useContactsQuery, useCreateContacts, useUpdateContacts } from "@/composables/useContacts";
 import { themeInstance } from "@/helper";
 import RichEditor from "@/components/RichEditor.vue";
 import ThemeToggle from "./ThemeToggle.vue";
 import Spiner from "@/components/Spiner.vue";
 
-const GeneralRepository = RepositoryFactory.get("general");
-const generalStore = useGeneralStore();
+const { data: contactsData } = useContactsQuery();
+const { mutate: createContacts, isPending: isCreating } = useCreateContacts();
+const { mutate: updateContacts, isPending: isUpdating } = useUpdateContacts();
 
 const filesInput = ref<HTMLInputElement | null>(null);
 
@@ -114,7 +113,7 @@ const v$ = useVuelidate(rules, { email, phone, vimeo, facebook, telegram, instag
 
 const isDataTheSame = true;
 
-function setContacts(contacts: Record<string, unknown> | null) {
+function setContacts(contacts: Record<string, unknown> | null | undefined) {
   if (!contacts) return;
   email.value = contacts.email as string;
   phone.value = contacts.phone as string;
@@ -174,15 +173,26 @@ async function submit() {
   const image = selectedImages.value?.[0];
   if (image?.file) formData.append("photos[]", image.file);
 
-  isLoading.value = true;
-  const action = isContactAlreadyExist.value
-    ? GeneralRepository.updateContacts(formData)
-    : GeneralRepository.createContacts(formData);
-  action.finally(() => { isLoading.value = false; });
+  const onSettled = () => {
+    isSuccess.value = true;
+    setTimeout(() => { isSuccess.value = false; }, 10_000);
+  };
+  if (isContactAlreadyExist.value) {
+    updateContacts(formData, { onSettled });
+  } else {
+    createContacts(formData, { onSettled });
+  }
 }
 
-onMounted(async () => {
-  if (!generalStore.contacts) await generalStore.fetchContacts();
-  setContacts(generalStore.contacts as Record<string, unknown> | null);
+watch(contactsData, (c) => {
+  setContacts(c as Record<string, unknown> | undefined);
+}, { immediate: true });
+
+watch([isCreating, isUpdating], ([a, b]) => {
+  isLoading.value = a || b;
+});
+
+onMounted(() => {
+  setContacts(contactsData.value as Record<string, unknown> | undefined);
 });
 </script>

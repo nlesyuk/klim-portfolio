@@ -64,12 +64,10 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { getHeightAndWidthFromDataUrl } from "@/helper/index";
-import { RepositoryFactory } from "@/repositories/RepositoryFactory";
-import { useShotsStore } from "@/stores/shots";
+import { useUpdateShot, shotCategories } from "@/composables/useShots";
 import Spiner from "@/components/Spiner.vue";
 
-const ShotRepository = RepositoryFactory.get("shots");
-const shotsStore = useShotsStore();
+const { mutateAsync: updateShot } = useUpdateShot();
 
 const props = defineProps<{ shot: Record<string, unknown>; videos: unknown[] }>();
 const emit = defineEmits<{ close: [] }>();
@@ -78,7 +76,7 @@ const isLoading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const myCategories = computed(() => {
-  const cats = shotsStore.categories as string[];
+  const cats = shotCategories;
   const shotCats = props.shot.categories as string[];
   if (shotCats.includes("all") && shotCats.length !== 1) {
     return cats.map((name) => ({ name, isDisabled: name !== "all" }));
@@ -106,7 +104,7 @@ async function update() {
   isLoading.value = true;
   const { id, src, workId, categories, format, file } = props.shot as Record<string, unknown>;
   const cats = categories as string[];
-  const shotCategories = cats.some((v) => v === "all")
+  const submitCategories = cats.some((v) => v === "all")
     ? ["all"]
     : cats.filter((v) => v !== "all");
 
@@ -115,13 +113,13 @@ async function update() {
     formData.append("id", String(id));
     formData.append("format", String(format));
     formData.append("workId", String(workId));
-    formData.append("categories", JSON.stringify(shotCategories));
+    formData.append("categories", JSON.stringify(submitCategories));
     if (file) {
       formData.append("photos[]", file as File);
     } else {
       formData.append("src", String(src));
     }
-    await ShotRepository.update(formData);
+    await updateShot(formData);
   } catch (e) {
     console.error(e);
   } finally {

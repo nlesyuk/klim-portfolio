@@ -15,24 +15,21 @@ import { useRoute } from "vue-router";
 import WorksGrid from "@/components/WorksGrid.vue";
 import Slider from "@/views/Slider.vue";
 import Spiner from "@/components/Spiner.vue";
-import { useVideosStore } from "@/stores/videos";
+import { useVideosQuery } from "@/composables/useVideos";
 import { setTitle } from "@/helper";
 
 const route = useRoute();
-const videosStore = useVideosStore();
+const { data } = useVideosQuery();
 
 const allVideos = computed(() => {
   if (route.name === "works-commercial") {
-    if (!videosStore.videos) return undefined;
-    return (videosStore.videos as Record<string, unknown>[]).filter((v) =>
-      (v.category as string[] | undefined)?.includes("commerce")
+    if (!data.value) return undefined;
+    return data.value.filter((v) =>
+      ((v as Record<string, unknown>).category as string[] | undefined)?.includes("commerce")
     );
   }
-  return videosStore.videos;
+  return data.value;
 });
 
-onMounted(() => {
-  setTitle("Works");
-  if (!videosStore.videos) videosStore.getAllVideos();
-});
+onMounted(() => { setTitle("Works"); });
 </script>

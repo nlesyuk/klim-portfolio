@@ -12,17 +12,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import { useQuery } from "@tanstack/vue-query";
 import PhotosGrid from "@/components/PhotosGrid.vue";
 import Spiner from "@/components/Spiner.vue";
+import { queryKeys } from "@/queries/keys";
 import { RepositoryFactory } from "@/repositories/RepositoryFactory";
 import { setTitle } from "@/helper";
 
-const PhotosRepository = RepositoryFactory.get("photos");
+const PhotosRepo = RepositoryFactory.get("photos");
 const route = useRoute();
 
-const photo = ref<Record<string, unknown> | null>(null);
+const photoId = computed(() => +String(route.params.id));
+
+const { data: photo } = useQuery<Record<string, unknown>>({
+  queryKey: computed(() => [...queryKeys.photos(), photoId.value]),
+  queryFn: () => PhotosRepo.getById(photoId.value).then((r: { data: Record<string, unknown> }) => r.data),
+  enabled: computed(() => !!photoId.value),
+});
 
 const firstPhotos = computed(() => {
   const previews = (photo.value?.photos as Record<string, unknown>[] | undefined)?.filter((v) => v.isPreview);
@@ -34,13 +42,5 @@ const restPhotos = computed(() => {
   return previews?.length ? previews : [];
 });
 
-onMounted(async () => {
-  setTitle("Photo");
-  try {
-    const { data } = await PhotosRepository.getById(+String(route.params.id));
-    photo.value = data;
-  } catch (e) {
-    console.error(e);
-  }
-});
+onMounted(() => { setTitle("Photo"); });
 </script>
