@@ -128,13 +128,24 @@ import RichEditor from "@/components/RichEditor.vue";
 import Spiner from "@/components/Spiner.vue";
 import { usePhotosQuery, useCreatePhoto, useUpdatePhoto } from "@/composables/usePhotos";
 import { categories as photoCategoriesAll } from "@/helper/constants";
+import type { PhotoCollection } from "@/models";
 
 const { data: photosData } = usePhotosQuery();
 const { mutateAsync: createPhoto } = useCreatePhoto();
 const { mutateAsync: updatePhoto } = useUpdatePhoto();
 
+interface PhotoDraft {
+  id?: number;
+  src: string;
+  file?: File;
+  format?: string;
+  order?: number;
+  isPreview?: boolean;
+  fileName?: string;
+}
+
 const props = defineProps<{
-  photoCollection?: Record<string, unknown>;
+  photoCollection?: PhotoCollection;
   isEdit?: boolean;
 }>();
 
@@ -142,15 +153,15 @@ const emit = defineEmits<{ "work-create-successfully": [] }>();
 
 const filesInput = ref<HTMLInputElement | null>(null);
 
-const id = ref<unknown>(null);
+const id = ref<number | null>(null);
 const title = ref("");
 const videoId = ref("");
-const order = ref<unknown>(null);
+const order = ref<number | null>(null);
 const credits = ref("");
 const description = ref("");
 const choosedCategories = ref<string[]>([]);
-const selectedImages = ref<Record<string, unknown>[]>([]);
-const removedImages = ref<unknown[]>([]);
+const selectedImages = ref<PhotoDraft[]>([]);
+const removedImages = ref<number[]>([]);
 const isLoading = ref(false);
 const isSuccess = ref(false);
 const clientErrors = ref<string[]>([]);
@@ -203,8 +214,8 @@ function getFiles() {
   });
 }
 
-function removeSelectedImage(image: Record<string, unknown>) {
-  if (props.isEdit) removedImages.value.push(image.id);
+function removeSelectedImage(image: PhotoDraft) {
+  if (props.isEdit && image.id != null) removedImages.value.push(image.id);
   selectedImages.value = selectedImages.value.filter((v) => v.src !== image.src);
 }
 
@@ -282,7 +293,7 @@ function setDataForEdit() {
 function update() {
   try {
     const formData = new FormData();
-    const oldPhotos = Array.from(props.photoCollection?.photos as Record<string, unknown>[]);
+    const oldPhotos: PhotoDraft[] = props.photoCollection?.photos ? Array.from(props.photoCollection.photos) : [];
 
     const newPhotoInfo = selectedImages.value.filter((v) => {
       if (v.file) { formData.append("photos[]", v.file as File); return true; }
@@ -297,7 +308,7 @@ function update() {
       const isNew = v.file;
       const isUpdated = JSON.stringify(v) !== JSON.stringify(oldPhotos[idx]);
       return isUpdated && !isNew;
-    }) ?? [];
+    });
 
     const existingPhotoInfo = oldPhotos.filter((exphoto) =>
       !updatePhotoInfo.some((up) => up.id === exphoto.id)

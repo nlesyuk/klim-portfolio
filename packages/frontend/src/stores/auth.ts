@@ -1,10 +1,10 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import AuthService, { userStorageService } from "@/services/auth.service";
-import type { IUser } from "@/helper/interfaces";
+import type { User } from "@/models";
 
 export const useAuthStore = defineStore("auth", () => {
-  const user = ref<IUser | null>(userStorageService.get());
+  const user = ref<User | null>(userStorageService.get());
   const loggedIn = ref(!!user.value);
 
   async function login(credentials: { username: string; password: string }) {

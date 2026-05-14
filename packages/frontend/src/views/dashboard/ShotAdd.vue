@@ -55,17 +55,26 @@ import { getHeightAndWidthFromDataUrl } from "@/helper";
 const { mutateAsync: createShot } = useCreateShot();
 const { data: videosData } = useVideosQuery();
 
+interface ShotDraft {
+  file: File;
+  photoOriginalName: string;
+  workId: number | null;
+  categories: string[];
+  url: string;
+  format: string;
+}
+
 const filesInput = ref<HTMLInputElement | null>(null);
 const isLoading = ref(false);
 const isSuccess = ref(false);
 const serverError = ref<string | null>(null);
-const selectedImages = ref<Record<string, unknown>[]>([]);
+const selectedImages = ref<ShotDraft[]>([]);
 
-const videos = computed(() => videosData.value as Record<string, unknown>[] | undefined);
+const videos = computed(() => videosData.value);
 const categories = computed(() => shotCategories);
 const isAllowCreateShots = computed(() => {
   if (!selectedImages.value.length) return false;
-  return selectedImages.value.every((file) => file.workId && (file.categories as string[]).length > 0);
+  return selectedImages.value.every((file) => file.workId && file.categories.length > 0);
 });
 
 function getFiles() {
@@ -79,7 +88,7 @@ function getFiles() {
   });
 }
 
-function removeSelectedImage(url: unknown) {
+function removeSelectedImage(url: string) {
   selectedImages.value = selectedImages.value.filter((v) => v.url !== url);
 }
 
@@ -89,10 +98,10 @@ async function submit() {
   try {
     isLoading.value = true;
     const formData = new FormData();
-    for (const item of selectedImages.value) formData.append("photos[]", item.file as File);
-    const images = JSON.parse(JSON.stringify(selectedImages.value));
-    const shots = Array.from(images).map((v: unknown) => {
-      const obj = { ...(v as Record<string, unknown>) };
+    for (const item of selectedImages.value) formData.append("photos[]", item.file);
+    const images = JSON.parse(JSON.stringify(selectedImages.value)) as ShotDraft[];
+    const shots = images.map((v) => {
+      const obj: Partial<ShotDraft> = { ...v };
       delete obj.file;
       delete obj.url;
       return obj;

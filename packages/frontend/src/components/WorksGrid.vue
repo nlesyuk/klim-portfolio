@@ -24,9 +24,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-
-type Photo = { isPreview: boolean; src: string };
-type Work = { id: number; title: string; order: number; photos: Photo[] };
+import type { Work } from "@/models";
 
 const props = withDefaults(defineProps<{ works: Work[]; isAdmin?: boolean }>(), { isAdmin: false });
 const emit = defineEmits<{ edit: [id: number]; delete: [id: number] }>();

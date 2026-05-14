@@ -9,13 +9,13 @@
     "noEmit": true,
     "jsx": "preserve",
     "strict": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "paths": {
       "@/*": ["./src/*"],
       "Repositories/*": ["./src/repositories/*"]

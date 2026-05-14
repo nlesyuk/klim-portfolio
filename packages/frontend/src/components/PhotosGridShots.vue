@@ -24,10 +24,9 @@
 import { computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { chunk } from "lodash";
 import SimpleLightbox from "simple-lightbox";
+import type { Shot } from "@/models";
 
-type Item = { id?: number; src: string; workId?: number };
-
-const props = withDefaults(defineProps<{ images: Item[]; isManage?: boolean }>(), { isManage: false });
+const props = withDefaults(defineProps<{ images: Shot[]; isManage?: boolean }>(), { isManage: false });
 const emit = defineEmits<{ removeImg: [id: number]; editImg: [id: number] }>();
 
 let lightbox: InstanceType<typeof SimpleLightbox> | null = null;

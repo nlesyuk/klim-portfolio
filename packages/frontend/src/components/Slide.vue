@@ -14,9 +14,10 @@
 import { ref, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import Player from "@vimeo/player";
+import type { Slide, WorkVideos } from "@/models";
 
 const props = defineProps<{
-  source: Record<string, unknown>;
+  source: Slide;
   classes?: string;
   isHideTitle?: boolean;
   currentSlide: number | string;
@@ -31,7 +32,10 @@ const isPaused = ref(false);
 const isPlaying = ref(false);
 
 function installVimeo() {
-  const vimeoId = (props.source?.video as Record<string, unknown>)?.vimeoId;
+  const v = typeof props.source.videos === "string"
+    ? (JSON.parse(props.source.videos) as WorkVideos)
+    : props.source.videos;
+  const vimeoId = v?.vimeoId;
   if (!vimeoId || props.source.type !== "video" || player.value || !videoEl.value) return;
   player.value = new Player(videoEl.value, { id: +vimeoId, width: 640, color: "#ff0000", background: true, autopause: true, byline: false, loop: true, controls: false, responsive: true });
   player.value.setQuality("720p");

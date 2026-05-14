@@ -22,7 +22,7 @@
           <li><button type="button" class="dashboard__btn-inline" @click.prevent="edit(item.id)">Edit</button></li>
           <li><button type="button" class="dashboard__btn-inline" title="id" disabled>id:{{ item.id }}</button></li>
           <li>
-            <span class="dashboard__badge badge-blue" v-for="(category, index) in item.category" :key="index">{{ category }}</span>
+            <span class="dashboard__badge badge-blue" v-for="(category, index) in item.categories" :key="index">{{ category }}</span>
           </li>
           <li class="dashboard__badge badge-green color-black">{{ getCategories(item.categories) }}</li>
         </ul>
@@ -43,6 +43,7 @@ import Spiner from "@/components/Spiner.vue";
 import { usePhotosQuery, useDeletePhoto } from "@/composables/usePhotos";
 import { queryKeys } from "@/queries/keys";
 import { isCinematographerMode, isPhotographerMode } from "@/helper/constants";
+import type { PhotoCollection } from "@/models";
 
 const route = useRoute();
 const qc = useQueryClient();
@@ -52,13 +53,13 @@ const { mutate: deletePhoto } = useDeletePhoto();
 const isEdit = ref(false);
 const isManage = ref(true);
 const isShowAddPhoto = ref(false);
-const photoCollection = ref<unknown>(null);
+const photoCollection = ref<PhotoCollection | undefined>(undefined);
 const personal = ref(false);
 
-const allPhotos = computed(() => data.value as Record<string, unknown>[] | undefined);
+const allPhotos = computed(() => data.value);
 
 const photographerPhotos = computed(() => {
-  if (personal.value) return allPhotos.value?.filter((v) => (v.categories as string[]).includes("personal"));
+  if (personal.value) return allPhotos.value?.filter((v) => v.categories?.includes("personal"));
   return allPhotos.value;
 });
 
@@ -66,24 +67,24 @@ const cinematographerPhotos = computed(() => {
   const p = allPhotos.value;
   if (!p) return undefined;
   const sorted = route.path.includes("commerce")
-    ? p.filter((v) => (v.categories as string[]).includes("commerce"))
+    ? p.filter((v) => v.categories?.includes("commerce"))
     : p;
-  return [...sorted].sort((a, b) => (b.order as number) - (a.order as number));
+  return [...sorted].sort((a, b) => b.order - a.order);
 });
 
 const photos = computed(() => isCinematographerMode ? cinematographerPhotos.value : photographerPhotos.value);
 const isPhotosEmpty = computed(() => !photos.value?.length);
 
-function remove(id: unknown) { deletePhoto(id); }
+function remove(id: number) { deletePhoto(id); }
 function refresh() { qc.invalidateQueries({ queryKey: queryKeys.photos() }); }
 function getCategories(arr: unknown) {
   if (Array.isArray(arr)) return arr.join(", ");
   return arr;
 }
-function edit(id: unknown) {
+function edit(id: number) {
   isEdit.value = true;
   const item = allPhotos.value?.filter((v) => v.id === id);
-  photoCollection.value = item?.length ? item[0] : null;
+  photoCollection.value = item?.length ? item[0] : undefined;
   isShowAddPhoto.value = true;
 }
 </script>

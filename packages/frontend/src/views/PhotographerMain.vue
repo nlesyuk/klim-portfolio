@@ -22,16 +22,17 @@ const route = useRoute();
 const { data } = usePhotosQuery();
 
 const allPhotos = computed(() => {
-  const photos = data.value as Record<string, unknown>[] | undefined;
+  const photos = data.value;
   const category = route.query.filter as string | undefined;
-  const filtered: Record<string, Record<string, unknown>[] | undefined> = {
+  const byCat = (key: string) => photos?.filter((item) => item.categories?.includes(key));
+  const filtered = {
     all: photos,
-    automotive: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("automotive")),
-    fashion: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("fashion")),
-    lifestyle: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("lifestyle")),
-    personal: photos?.filter((item) => (item.categories as string[] | undefined)?.includes("personal")),
-  };
-  return filtered[category ?? ""] ?? photos;
+    automotive: byCat("automotive"),
+    fashion: byCat("fashion"),
+    lifestyle: byCat("lifestyle"),
+    personal: byCat("personal"),
+  } as const;
+  return filtered[category as keyof typeof filtered] ?? photos;
 });
 
 onMounted(() => { setTitle("Portfolio"); });

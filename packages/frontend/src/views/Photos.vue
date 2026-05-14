@@ -28,14 +28,14 @@ const route = useRoute();
 const { data } = usePhotosQuery();
 
 const photos = computed(() => {
-  const all = data.value as Record<string, unknown>[] | undefined;
+  const all = data.value;
   if (!all) return undefined;
   const base = isCinematographerMode
     ? all
-    : all.filter((item) => (item.categories as string[] | undefined)?.includes("personal"));
-  const sorted = [...base].sort((a, b) => (b.order as number) - (a.order as number));
+    : all.filter((item) => item.categories?.includes("personal"));
+  const sorted = [...base].sort((a, b) => b.order - a.order);
   if (route.name === "commerce") {
-    return sorted.filter((item) => (item.categories as string[] | undefined)?.includes("commerce"));
+    return sorted.filter((item) => item.categories?.includes("commerce"));
   }
   return sorted;
 });

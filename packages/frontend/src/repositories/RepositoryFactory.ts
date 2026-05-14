@@ -13,11 +13,15 @@ const repositories = {
   photos: PhotosRepository,
   slides: SlidesRepository,
   general: GeneralRepository,
-  categories: CategoriesRepository
-};
+  categories: CategoriesRepository,
+} as const;
+
+export type RepositoryName = keyof typeof repositories;
 
 export const RepositoryFactory = {
-  get: name => repositories[name]
+  get<K extends RepositoryName>(name: K): typeof repositories[K] {
+    return repositories[name];
+  },
 };
 
 export default RepositoryFactory;

@@ -304,20 +304,27 @@ Axios stays as the HTTP client; TanStack Query takes over caching, loading/error
 
 ---
 
-## Phase 7 — Type tightening (≈2 days) ⬜ TODO
+## Phase 7 — Type tightening (≈2 days) ✅ DONE
 
-1. Define domain interfaces in `src/models/index.ts`: `Photo`, `Shot`, `Slide`, `Work`, `Contact`, `User`, `Category`.
-2. Type repositories in `src/repositories/` with axios generics — aligns with Phase 6 query functions:
-   ```ts
-   get(): Promise<AxiosResponse<Photo[]>>
-   ```
-3. Type all `useQuery`/`useMutation` generic params using the new models.
-4. Flip `tsconfig.json`:
-   - `noImplicitAny: true`
-   - `strict: true`
-   - `allowJs: false`
-5. Delete `src/shims-tsx.d.ts`; confirm `src/shims-vue.d.ts` correct for Vue 3.
-6. Fix fallout file-by-file. Use `// @ts-expect-error` sparingly with a `TODO(types):` comment.
+1. ✅ **Domain models** — `src/models/index.ts` created with `User`, `Photo` (alias `PhotoFile`), `PhotoCollection`, `Shot`, `Slide`, `SlideType`, `Work`, `WorkVideos`, `Contact`, `Category`. Replaced scattered local types in `PhotoPreview`, `PhotosGrid`, `PhotosGridShots`, `PhotosPreviewGrid`, `WorksGrid`, `Slide`, `Slides`.
+2. ✅ **Typed repositories** with axios generics. All 7 repo files now return `Promise<AxiosResponse<T>>` keyed on domain models. `RepositoryFactory` rewritten as generic `get<K>(name)` for type-safe lookup.
+3. ✅ **Typed composables** — all `useQuery`/`useMutation` generics now use domain models instead of `Record<string, unknown>`. `useVideoQuery` accepts `MaybeRefOrGetter` for reactive IDs.
+4. ✅ **Cleanup** — deleted `src/models/user.js`, `src/helper/interfaces.ts` (IUser → User), `src/utils/message.plugin.ts` (Vue 2 plugin, unused after Phase 2).
+5. ✅ **Typed legacy services/helpers** — `services/auth.service.ts`, `services/storage.service.ts` (generic `get<T>()`), `helper/index.ts` (all implicit `any` removed), `repositories/Repository.ts` (axios interceptors typed with `AxiosError` + `RetryRequestConfig`).
+6. ✅ **Component consumers updated** — all 20+ views/components stripped of `Record<string, unknown>` casts; refs that hold a single edit/preview entity now use `T | undefined` (not `T | null`) to match child prop optionality.
+7. ✅ **`useNotify` fix** — `type: 3` → `type: "filled"` (correct `NotifyType` enum from simple-notify).
+8. ✅ Flipped `tsconfig.json` `noImplicitAny: true`. Installed `@types/lodash`; widened `PhotosGrid` emit ids to `number | undefined` to match `Photo.id` optionality.
+9. ✅ Deleted `src/shims-tsx.d.ts` (Vue 2 JSX globals); `src/shims-vue.d.ts` already Vue 3 (`DefineComponent`).
+10. ✅ Installed `@types/node` and added `"node"` to `tsconfig.types` — resolves `path`/`__dirname` in vite.config.
+11. ✅ **Build verification:** `npx vue-tsc --noEmit` clean; `npm run build` green (391 modules, ~1.25s). Incidentally fixed two Vite 5 build blockers: moved `public/index.html` → root (Vite convention), updated `simple-notify` CSS import path (`.min.css` → `.css` per current package layout).
+
+### Exit criteria
+
+- `src/models/index.ts` is the single source of truth for domain types — no local duplicates in components
+- All repositories return `Promise<AxiosResponse<DomainType>>`; no `any` in repo signatures
+- `npx vue-tsc --noEmit` clean (or only documented `@ts-expect-error TODO(types):` remaining)
+- `noImplicitAny: true` enabled
+- Legacy artifacts removed: `models/user.js`, `helper/interfaces.ts`, `utils/message.plugin.ts`, `shims-tsx.d.ts`
 
 ---
 

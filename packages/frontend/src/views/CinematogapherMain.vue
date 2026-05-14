@@ -24,9 +24,7 @@ const { data } = useVideosQuery();
 const allVideos = computed(() => {
   if (route.name === "works-commercial") {
     if (!data.value) return undefined;
-    return data.value.filter((v) =>
-      ((v as Record<string, unknown>).category as string[] | undefined)?.includes("commerce")
-    );
+    return data.value.filter((v) => v.category?.includes("commerce"));
   }
   return data.value;
 });

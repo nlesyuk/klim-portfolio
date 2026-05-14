@@ -33,6 +33,7 @@ import { useSlidesQuery, useDeleteSlide } from "@/composables/useSlides";
 import { useVideosQuery } from "@/composables/useVideos";
 import { usePhotosQuery } from "@/composables/usePhotos";
 import { queryKeys } from "@/queries/keys";
+import type { Slide } from "@/models";
 
 const qc = useQueryClient();
 const { data: slidesData } = useSlidesQuery();
@@ -40,28 +41,28 @@ const { data: videosData } = useVideosQuery();
 const { data: photosData } = usePhotosQuery();
 const { mutate: deleteSlide } = useDeleteSlide();
 
-const slide = ref<unknown>(null);
+const slide = ref<Slide | undefined>(undefined);
 const isEdit = ref(false);
 const isShowAddSlide = ref(false);
 
-const slides = computed(() => slidesData.value as Record<string, unknown>[] | undefined);
-const videos = computed(() => videosData.value as Record<string, unknown>[] | undefined);
-const photos = computed(() => photosData.value as Record<string, unknown>[] | undefined);
+const slides = computed(() => slidesData.value);
+const videos = computed(() => videosData.value);
+const photos = computed(() => photosData.value);
 
 const sortedSlides = computed(() => {
   const s = slides.value;
   if (!s) return s;
-  return [...s].sort((a, b) => (b.order as number) - (a.order as number));
+  return [...s].sort((a, b) => b.order - a.order);
 });
 
 function onRefresh() { qc.invalidateQueries({ queryKey: queryKeys.slides() }); }
 
-function onDelete(id: unknown) { deleteSlide(id); }
+function onDelete(id: number) { deleteSlide(id); }
 
-function onEdit(id: unknown) {
+function onEdit(id: number) {
   isEdit.value = true;
   const item = slides.value?.filter((v) => v.id === id);
-  slide.value = item?.length ? item[0] : null;
+  slide.value = item?.length ? item[0] : undefined;
   isShowAddSlide.value = true;
 }
 </script>

@@ -43,17 +43,16 @@ import { useRouter } from "vue-router";
 import { chunk } from "lodash";
 import SimpleLightbox from "simple-lightbox";
 import "simple-lightbox/dist/simpleLightbox.min.css";
-
-type Image = { id?: number; src: string; format?: string; order?: number; photoId?: number; workId?: number };
+import type { Photo } from "@/models";
 
 const props = withDefaults(defineProps<{
-  images: Image[];
+  images: Photo[];
   isManage?: boolean;
   isShots?: boolean;
   isWorks?: boolean;
 }>(), { isManage: false, isShots: false, isWorks: false });
 
-const emit = defineEmits<{ removeImg: [id: number]; editImg: [id: number] }>();
+const emit = defineEmits<{ removeImg: [id: number | undefined]; editImg: [id: number | undefined] }>();
 
 const router = useRouter();
 const lightboxRefs = ref<HTMLElement[]>([]);
@@ -66,14 +65,14 @@ function uninstallLightBox() {
   if (lightbox.value) { lightbox.value.destroy(); lightbox.value = null; }
 }
 
-function goTo(item: Image) {
+function goTo(item: Photo) {
   if (Object.prototype.hasOwnProperty.call(item, "photoId")) router.push({ name: "photo", params: { id: item.photoId } });
   else if (Object.prototype.hasOwnProperty.call(item, "workId")) router.push({ name: "work", params: { id: item.workId } });
 }
 
 const chunkedImages = computed(() => {
   if (!props.images.length) return null;
-  const sortOrder = (f: Image, s: Image) => (f?.order && s?.order ? f.order - s.order : 0);
+  const sortOrder = (f: Photo, s: Photo) => (f?.order && s?.order ? f.order - s.order : 0);
   if (props.isWorks) {
     return { horizontal: chunk([...props.images].sort(sortOrder), 3) };
   }

@@ -139,8 +139,8 @@
       </div>
 
       <div class="dashboard__side dashboard__area-preview">
-        <div class="dashboard-works-add__preview-cont" v-if="previewWork && previewWork.photos.length">
-          <Work :isPreview="true" :previewWork="previewWork" />
+        <div class="dashboard-works-add__preview-cont" v-if="previewWork && previewWork.photos && previewWork.photos.length">
+          <WorkView :isPreview="true" :previewWork="previewWork" />
         </div>
       </div>
     </form>
@@ -151,19 +151,29 @@
 import { ref, computed, watch, onMounted } from "vue";
 import useVuelidate from "@vuelidate/core";
 import { required, minLength, maxLength } from "@vuelidate/validators";
-import Work from "@/views/Work.vue";
+import WorkView from "@/views/Work.vue";
 import RichEditor from "@/components/RichEditor.vue";
 import Spiner from "@/components/Spiner.vue";
 import { useCreateVideo, useUpdateVideo } from "@/composables/useVideos";
 import { getHeightAndWidthFromDataUrl } from "@/helper/index";
 import { allowedImageSizeInKb } from "@/helper";
+import type { Work } from "@/models";
 
 const { mutateAsync: createVideo } = useCreateVideo();
 const { mutateAsync: updateVideo } = useUpdateVideo();
 
+interface WorkPhotoDraft {
+  id?: number;
+  src?: string;
+  file?: File;
+  format?: string;
+  order?: number;
+  isPreview?: boolean;
+}
+
 const props = defineProps<{
-  work?: Record<string, unknown>;
-  works?: Record<string, unknown>[];
+  work?: Work;
+  works?: Work[];
   isEdit?: boolean;
 }>();
 
@@ -177,8 +187,8 @@ const title = ref("");
 const credits = ref("");
 const videoId = ref("");
 const description = ref("");
-const order = ref<unknown>(null);
-const selectedImages = ref<Record<string, unknown>[]>([]);
+const order = ref<number | null>(null);
+const selectedImages = ref<WorkPhotoDraft[]>([]);
 const isLoading = ref(false);
 const isSuccess = ref(false);
 const clientErrors = ref<string[]>([]);
@@ -191,22 +201,23 @@ const rules = {
 };
 const v$ = useVuelidate(rules, { title, videoId });
 
-const previewWork = computed(() => {
+const previewWork = computed<Partial<Work>>(() => {
   const base = { title: title.value, credits: credits.value, description: description.value, videos: { vimeoId: videoId.value } };
-  if (props.isEdit) return { ...base, photos: [...selectedImages.value] };
-  const workPhotos = props.work?.photos ? (props.work.photos as unknown[]) : [];
-  return { ...base, photos: [...selectedImages.value, ...workPhotos] };
+  const drafts = selectedImages.value.map((d) => ({ ...d, src: d.src ?? "" }));
+  if (props.isEdit) return { ...base, photos: drafts };
+  const workPhotos = props.work?.photos ?? [];
+  return { ...base, photos: [...drafts, ...workPhotos] };
 });
 
 const worksLength = computed(() => {
   if (!props.works) return [];
-  const arr = (props.works as Record<string, unknown>[]).map((v) => v.order as number);
+  const arr = props.works.map((v) => v.order);
   const len = arr?.length ? Math.max(...arr) + 2 : 1;
   return Array.from({ length: len });
 });
 
 const getMaxOrderNumber = computed(() => {
-  const orders = selectedImages.value?.map((v) => +(v.order as number));
+  const orders = selectedImages.value?.map((v) => +(v.order ?? 0));
   return Math.max(...orders);
 });
 
@@ -322,7 +333,7 @@ function update() {
   const WORK = props.work!;
   const formData = new FormData();
   const videos = JSON.stringify({ vimeoId: videoId.value });
-  const oldPhotos = Array.from(WORK.photos as Record<string, unknown>[]);
+  const oldPhotos = Array.from(WORK.photos);
 
   const newPhotoInfo = selectedImages.value.filter((v) => {
     if (v.file) { formData.append("photos[]", v.file as File); return true; }
@@ -335,7 +346,7 @@ function update() {
     const isNew = v.file;
     const isUpdated = JSON.stringify(v) !== JSON.stringify(oldPhotos[idx]);
     return isUpdated && !isNew;
-  }) ?? [];
+  });
 
   const existingPhotoInfo = oldPhotos.filter((ex) => !updatePhotoInfo.some((up) => up.id === ex.id));
 
@@ -354,12 +365,13 @@ function update() {
     .finally(() => { isLoading.value = false; });
 }
 
-function deleteExistingImage(id: unknown) {
+function deleteExistingImage(id: number | undefined) {
   selectedImages.value = selectedImages.value.filter((v) => v.id !== id);
-  if (!id) return;
-  const work = props.work as Record<string, unknown>;
+  if (id == null) return;
+  const work = props.work;
+  if (!work) return;
   if (work.deletedPhotoIds) {
-    (work.deletedPhotoIds as unknown[]).push(id);
+    work.deletedPhotoIds.push(id);
   } else {
     work.deletedPhotoIds = [id];
   }

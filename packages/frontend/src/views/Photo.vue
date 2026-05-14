@@ -20,25 +20,26 @@ import Spiner from "@/components/Spiner.vue";
 import { queryKeys } from "@/queries/keys";
 import { RepositoryFactory } from "@/repositories/RepositoryFactory";
 import { setTitle } from "@/helper";
+import type { PhotoCollection } from "@/models";
 
 const PhotosRepo = RepositoryFactory.get("photos");
 const route = useRoute();
 
 const photoId = computed(() => +String(route.params.id));
 
-const { data: photo } = useQuery<Record<string, unknown>>({
+const { data: photo } = useQuery<PhotoCollection>({
   queryKey: computed(() => [...queryKeys.photos(), photoId.value]),
-  queryFn: () => PhotosRepo.getById(photoId.value).then((r: { data: Record<string, unknown> }) => r.data),
+  queryFn: () => PhotosRepo.getById(photoId.value).then((r) => r.data),
   enabled: computed(() => !!photoId.value),
 });
 
 const firstPhotos = computed(() => {
-  const previews = (photo.value?.photos as Record<string, unknown>[] | undefined)?.filter((v) => v.isPreview);
+  const previews = photo.value?.photos?.filter((v) => v.isPreview);
   return previews?.length ? previews : [];
 });
 
 const restPhotos = computed(() => {
-  const previews = (photo.value?.photos as Record<string, unknown>[] | undefined)?.filter((v) => !v.isPreview);
+  const previews = photo.value?.photos?.filter((v) => !v.isPreview);
   return previews?.length ? previews : [];
 });
 

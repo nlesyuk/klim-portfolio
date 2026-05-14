@@ -27,10 +27,10 @@ const route = useRoute();
 const { data } = usePhotosQuery();
 
 const allPhotos = computed(() => {
-  const photos = data.value as Record<string, unknown>[] | undefined;
+  const photos = data.value;
   const category = route.query.filter as string | undefined;
   if (category === "all" || !category) return photos;
-  return photos?.filter((item) => (item.categories as string[] | undefined)?.includes(category)) ?? photos;
+  return photos?.filter((item) => item.categories?.includes(category)) ?? photos;
 });
 
 onMounted(() => { setTitle("Portfolio"); });

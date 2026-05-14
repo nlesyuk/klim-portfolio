@@ -45,17 +45,19 @@ const { data } = useContactsQuery();
 
 const isActivateCalendar = ref(false);
 
-const contacts = computed(() => data.value as Record<string, unknown> | undefined);
-const image = computed(() => contacts.value?.image as string | undefined);
+const contacts = computed(() => data.value);
+const image = computed(() => contacts.value?.image);
 const phone = computed(() => {
   if (!contacts.value?.phone) return null;
   return String(contacts.value.phone).replace(/[^\w\s]/gi, "").replace(/\s/gi, "");
 });
 const description = computed(() => {
+  const d = contacts.value?.description;
+  if (!d) return undefined;
   try {
-    return JSON.parse(contacts.value?.description as string);
+    return JSON.parse(d);
   } catch {
-    return contacts.value?.description;
+    return d;
   }
 });
 

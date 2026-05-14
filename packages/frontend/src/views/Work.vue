@@ -2,10 +2,10 @@
   <div class="work-page">
     <Spiner v-if="isLoading" />
     <template v-if="work">
-      <VimeoVideoPlayer :id="work.videos.vimeoId" :previewImg="previewImg" />
+      <VimeoVideoPlayer :id="work.videos?.vimeoId ?? ''" :previewImg="previewImg ?? undefined" />
       <h1 class="work-page__title">{{ work.title }}</h1>
       <p class="work-page__description" v-html="work.description"></p>
-      <PhotosGrid v-show="work.photos" :images="work.photos" :isWorks="isPreview" />
+      <PhotosGrid v-show="work.photos" :images="work.photos ?? []" :isWorks="isPreview" />
       <p class="work-page__credits" v-html="work.credits"></p>
     </template>
     <h2 v-else-if="!error && !work && !isLoading" class="something-went-wrong">
@@ -26,20 +26,21 @@ import Error from "@/views/Error.vue";
 import { queryKeys } from "@/queries/keys";
 import { RepositoryFactory } from "@/repositories/RepositoryFactory";
 import { setTitle, handlerServerErrors } from "@/helper/index";
+import type { Work } from "@/models";
 
 const VideosRepo = RepositoryFactory.get("videos");
 const route = useRoute();
 
-const props = withDefaults(defineProps<{ previewWork?: Record<string, unknown>; isPreview?: boolean }>(), { isPreview: false });
+const props = withDefaults(defineProps<{ previewWork?: Partial<Work>; isPreview?: boolean }>(), { isPreview: false });
 
-const work = ref<Record<string, unknown> | null>(null);
+const work = ref<Partial<Work> | undefined>(undefined);
 const error = ref<{ status: number; statusText: string } | null>(null);
 
 const videoId = computed(() => route.params.id);
 
-const { data: fetchedWork, isPending, error: queryError } = useQuery<Record<string, unknown>>({
+const { data: fetchedWork, isPending, error: queryError } = useQuery<Work>({
   queryKey: computed(() => [...queryKeys.videos(), videoId.value]),
-  queryFn: () => VideosRepo.getVideo(videoId.value).then((r: { data: Record<string, unknown> }) => r.data),
+  queryFn: () => VideosRepo.getVideo(videoId.value).then((r) => r.data),
   enabled: computed(() => !props.isPreview && !!videoId.value),
 });
 
@@ -50,12 +51,9 @@ watch(queryError, (e) => { if (e) error.value = handlerServerErrors(e); });
 
 const previewImg = computed(() => {
   if (!work.value) return null;
-  if (props.isPreview) {
-    const res = (work.value.photos as Record<string, unknown>[] | undefined)?.filter((img) => img.isPreview) ?? [];
-    return res.length ? res[0].src : "";
-  }
-  const res = (work.value.photos as Record<string, unknown>[]).filter((img) => img.isPreview);
-  return res.length ? res[0].src : null;
+  const previews = work.value.photos?.filter((img) => img.isPreview) ?? [];
+  if (props.isPreview) return previews.length ? previews[0].src : "";
+  return previews.length ? previews[0].src : null;
 });
 
 watch(() => props.previewWork, (v) => { if (v) work.value = v; });
@@ -63,7 +61,7 @@ watch(() => props.previewWork, (v) => { if (v) work.value = v; });
 onMounted(() => {
   setTitle("Work");
   if (props.isPreview) {
-    work.value = props.previewWork ?? null;
+    work.value = props.previewWork;
   }
 });
 </script>

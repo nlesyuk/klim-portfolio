@@ -91,9 +91,9 @@ const vimeo = ref<string | null>(null);
 const facebook = ref<string | null>(null);
 const telegram = ref<string | null>(null);
 const instagram = ref<string | null>(null);
-const description = ref<string | null>(null);
+const description = ref<string>("");
 const selectedImages = ref<{ src: string; file?: File }[]>([]);
-const theme = ref<string | null>(null);
+const theme = ref<string | undefined>(undefined);
 
 const isContactAlreadyExist = ref(false);
 const isLoading = ref(false);
@@ -144,11 +144,11 @@ function reset() {
   email.value = null;
   phone.value = null;
   vimeo.value = null;
-  theme.value = null;
+  theme.value = undefined;
   facebook.value = null;
   telegram.value = null;
   instagram.value = null;
-  description.value = null;
+  description.value = "";
   selectedImages.value = [];
 }
 

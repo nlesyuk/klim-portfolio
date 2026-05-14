@@ -1,20 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { queryKeys } from "@/queries/keys";
 import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import type { PhotoCollection } from "@/models";
 
 const PhotosRepo = RepositoryFactory.get("photos");
 
 export function usePhotosQuery() {
-  return useQuery<Record<string, unknown>[]>({
+  return useQuery<PhotoCollection[]>({
     queryKey: queryKeys.photos(),
-    queryFn: () => PhotosRepo.get().then((r: { data: Record<string, unknown>[] }) => r.data),
+    queryFn: () => PhotosRepo.get().then((r) => r.data),
   });
 }
 
 export function useCreatePhoto() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: unknown) => PhotosRepo.create(payload),
+    mutationFn: (payload: FormData) => PhotosRepo.create(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.photos() }),
   });
 }
@@ -22,7 +23,7 @@ export function useCreatePhoto() {
 export function useUpdatePhoto() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: unknown) => PhotosRepo.update(payload),
+    mutationFn: (payload: FormData) => PhotosRepo.update(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.photos() }),
   });
 }
@@ -30,7 +31,7 @@ export function useUpdatePhoto() {
 export function useDeletePhoto() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: unknown) => PhotosRepo.delete(id),
+    mutationFn: (id: number | string | unknown) => PhotosRepo.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.photos() }),
   });
 }

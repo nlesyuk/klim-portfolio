@@ -37,9 +37,9 @@ const currentSlide = ref(0);
 const modules = [Navigation, Pagination, Autoplay];
 
 const sortedSlides = computed(() => {
-  const slides = data.value as Array<Record<string, unknown>> | undefined;
+  const slides = data.value;
   if (!slides) return [];
-  return [...slides].sort((a, b) => (b.order as number) - (a.order as number));
+  return [...slides].sort((a, b) => b.order - a.order);
 });
 
 function onSlideChange(swiper: SwiperClass) {

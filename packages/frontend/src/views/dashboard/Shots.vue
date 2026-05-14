@@ -25,33 +25,33 @@ import Spiner from "@/components/Spiner.vue";
 import { useShotsQuery, useDeleteShot } from "@/composables/useShots";
 import { useVideosQuery } from "@/composables/useVideos";
 import { queryKeys } from "@/queries/keys";
+import type { Shot } from "@/models";
 
 const qc = useQueryClient();
 const { data: shotsData } = useShotsQuery();
 const { data: videosData } = useVideosQuery();
-const { mutate: deleteShot, isPending: isDeleting } = useDeleteShot();
+const { mutate: deleteShot } = useDeleteShot();
 
 const isEdit = ref(false);
-const editedShot = ref<unknown>(null);
+const editedShot = ref<Shot | undefined>(undefined);
 const isShowAddShot = ref(false);
 
 const videos = computed(() => videosData.value);
-const isLoading = computed(() => isDeleting.value);
 const sortedFilteredPhotos = computed(() => {
-  const shots = (shotsData.value ?? []) as Record<string, unknown>[];
-  return [...shots].sort((a, b) => (b.id as number) - (a.id as number));
+  const shots = shotsData.value ?? [];
+  return [...shots].sort((a, b) => b.id - a.id);
 });
 
 function refresh() { qc.invalidateQueries({ queryKey: queryKeys.shots() }); }
 
-function remove(id: unknown) { deleteShot(id); }
+function remove(id: number) { deleteShot(id); }
 
-function edit(id: unknown) {
+function edit(id: number) {
   window.scroll({ top: 0, left: 0, behavior: "smooth" });
   isEdit.value = true;
-  const shots = (shotsData.value ?? []) as Record<string, unknown>[];
+  const shots = shotsData.value ?? [];
   const found = shots.filter((v) => v.id === id);
-  editedShot.value = found?.length ? found[0] : null;
+  editedShot.value = found?.length ? found[0] : undefined;
 }
 
 function closeEdit() { isEdit.value = false; }

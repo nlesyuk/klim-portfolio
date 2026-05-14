@@ -18,8 +18,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-
-type PhotoCollection = { id: number; title: string; order: number; photos: { isPreview: boolean; src: string; order: number }[] };
+import type { PhotoCollection } from "@/models";
 
 const props = defineProps<{ photos: PhotoCollection[] }>();
 const router = useRouter();
@@ -29,7 +28,7 @@ const sortedPhotos = computed(() => [...props.photos].sort((a, b) => a.order - b
 function getFirstPreviewPhoto(id: number) {
   const col = props.photos.find(v => v.id === id);
   if (!col) return "";
-  const previews = col.photos.filter(v => v.isPreview).sort((a, b) => a.order - b.order);
+  const previews = col.photos.filter(v => v.isPreview).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   return previews[0]?.src ?? "";
 }
 

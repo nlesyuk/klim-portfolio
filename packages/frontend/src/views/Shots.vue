@@ -39,11 +39,11 @@ const filter = computed(() => route.query.filter as string | undefined);
 const categories = shotCategories;
 const toggle = computed(() => !isPending.value);
 
-const filteredShots = computed<Record<string, unknown>[]>(() => {
-  const all = (data.value ?? []) as Record<string, unknown>[];
+const filteredShots = computed(() => {
+  const all = data.value ?? [];
   const key = filter.value;
   if (!key || key === "all") return all;
-  return all.filter((item) => (item.categories as string[]).includes(key));
+  return all.filter((item) => item.categories?.includes(key));
 });
 
 function changeFilter(f: string) {

@@ -133,15 +133,16 @@ import VimeoVideoPlayer from "@/components/VimeoVideoPlayer.vue";
 import Spiner from "@/components/Spiner.vue";
 import { getHeightAndWidthFromDataUrl } from "@/helper/index";
 import { useCreateSlide, useUpdateSlide } from "@/composables/useSlides";
+import type { Slide, Work, PhotoCollection } from "@/models";
 
 const { mutateAsync: createSlide } = useCreateSlide();
 const { mutateAsync: updateSlide } = useUpdateSlide();
 
 const props = defineProps<{
-  slide?: Record<string, unknown>;
-  slides?: unknown[];
-  works?: Record<string, unknown>[];
-  photos?: Record<string, unknown>[];
+  slide?: Slide;
+  slides?: Slide[];
+  works?: Work[];
+  photos?: PhotoCollection[];
   isEdit?: boolean;
 }>();
 

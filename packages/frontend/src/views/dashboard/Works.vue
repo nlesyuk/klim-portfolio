@@ -30,12 +30,13 @@ import WorksGrid from "@/components/WorksGrid.vue";
 import Spiner from "@/components/Spiner.vue";
 import { useVideosQuery, useDeleteVideo } from "@/composables/useVideos";
 import { queryKeys } from "@/queries/keys";
+import type { Work } from "@/models";
 
 const qc = useQueryClient();
 const { data } = useVideosQuery();
 const { mutate: deleteVideo } = useDeleteVideo();
 
-const work = ref<unknown>(null);
+const work = ref<Work | undefined>(undefined);
 const isEdit = ref(false);
 const isShowAddWork = ref(false);
 
@@ -43,12 +44,12 @@ const videos = computed(() => data.value);
 
 function refresh() { qc.invalidateQueries({ queryKey: queryKeys.videos() }); }
 
-function onEdit(id: unknown) {
+function onEdit(id: number) {
   isEdit.value = true;
-  const item = (data.value as Record<string, unknown>[] | undefined)?.filter((v) => v.id === id);
-  work.value = item?.length ? item[0] : null;
+  const item = data.value?.filter((v) => v.id === id);
+  work.value = item?.length ? item[0] : undefined;
   isShowAddWork.value = true;
 }
 
-function onDelete(id: unknown) { deleteVideo(id); }
+function onDelete(id: number) { deleteVideo(id); }
 </script>

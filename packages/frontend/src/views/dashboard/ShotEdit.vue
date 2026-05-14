@@ -66,10 +66,11 @@ import { ref, computed } from "vue";
 import { getHeightAndWidthFromDataUrl } from "@/helper/index";
 import { useUpdateShot, shotCategories } from "@/composables/useShots";
 import Spiner from "@/components/Spiner.vue";
+import type { Shot, Work } from "@/models";
 
 const { mutateAsync: updateShot } = useUpdateShot();
 
-const props = defineProps<{ shot: Record<string, unknown>; videos: unknown[] }>();
+const props = defineProps<{ shot: Shot | undefined; videos: Work[] | undefined }>();
 const emit = defineEmits<{ close: [] }>();
 
 const isLoading = ref(false);
@@ -77,7 +78,7 @@ const fileInput = ref<HTMLInputElement | null>(null);
 
 const myCategories = computed(() => {
   const cats = shotCategories;
-  const shotCats = props.shot.categories as string[];
+  const shotCats = props.shot?.categories ?? [];
   if (shotCats.includes("all") && shotCats.length !== 1) {
     return cats.map((name) => ({ name, isDisabled: name !== "all" }));
   }
@@ -85,25 +86,27 @@ const myCategories = computed(() => {
 });
 
 function removeImage() {
-  props.shot.src = "";
+  if (props.shot) props.shot.src = "";
 }
 
 function getFiles() {
   const files = fileInput.value?.files;
-  if (!files) return;
+  if (!files || !props.shot) return;
+  const shot = props.shot;
   Array.from(files).forEach((file) => {
     getHeightAndWidthFromDataUrl(file).then((res) => {
-      props.shot.format = res.height > res.width ? "vertical" : "horizontal";
-      props.shot.src = URL.createObjectURL(file);
-      props.shot.file = file;
+      shot.format = res.height > res.width ? "vertical" : "horizontal";
+      shot.src = URL.createObjectURL(file);
+      shot.file = file;
     });
   });
 }
 
 async function update() {
+  if (!props.shot) return;
   isLoading.value = true;
-  const { id, src, workId, categories, format, file } = props.shot as Record<string, unknown>;
-  const cats = categories as string[];
+  const { id, src, workId, categories, format, file } = props.shot;
+  const cats = categories;
   const submitCategories = cats.some((v) => v === "all")
     ? ["all"]
     : cats.filter((v) => v !== "all");

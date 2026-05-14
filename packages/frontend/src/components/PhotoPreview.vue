@@ -15,12 +15,10 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-
-type Photo = { src: string; isPreview: boolean; format?: string };
-type Collection = { id: number; title?: string; photos: Photo[] };
+import type { PhotoCollection } from "@/models";
 
 const props = withDefaults(defineProps<{
-  collection: Collection;
+  collection: PhotoCollection;
   collectionType?: string;
   classes?: string;
   isHideTitle?: boolean;

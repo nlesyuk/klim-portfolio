@@ -26,11 +26,11 @@ import { setTitle } from "@/helper";
 const { data } = usePhotosQuery();
 
 const photos = computed(() => {
-  const all = data.value as Record<string, unknown>[] | undefined;
+  const all = data.value;
   if (!all) return undefined;
   return isCinematographerMode
     ? all
-    : all.filter((item) => (item.categories as string[] | undefined)?.includes("personal"));
+    : all.filter((item) => item.categories?.includes("personal"));
 });
 
 onMounted(() => { setTitle("Photos"); });

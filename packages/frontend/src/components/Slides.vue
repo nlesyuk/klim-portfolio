@@ -29,7 +29,7 @@
         <img :src="item.image" class="slides__img" />
       </template>
       <template v-else-if="item.type === 'video'">
-        <VimeoVideoPlayer :id="item.videos.vimeoId" />
+        <VimeoVideoPlayer :id="vimeoId(item.videos)" />
       </template>
       <template v-else> bad type: {{ item.type }} </template>
     </li>
@@ -38,7 +38,14 @@
 
 <script setup lang="ts">
 import VimeoVideoPlayer from "@/components/VimeoVideoPlayer.vue";
+import type { Slide, WorkVideos } from "@/models";
 
-defineProps<{ slides: Record<string, unknown>[] }>();
-const emit = defineEmits<{ edit: [id: unknown]; delete: [id: unknown] }>();
+defineProps<{ slides: Slide[] }>();
+const emit = defineEmits<{ edit: [id: number]; delete: [id: number] }>();
+
+function vimeoId(v: Slide["videos"]): string {
+  if (!v) return "";
+  const obj = typeof v === "string" ? (JSON.parse(v) as WorkVideos) : v;
+  return obj.vimeoId ?? "";
+}
 </script>
