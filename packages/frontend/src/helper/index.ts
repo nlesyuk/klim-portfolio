@@ -21,7 +21,13 @@ export function setTitle(title: string): void {
 }
 
 export function handlerServerErrors(error: unknown): ServerErrorShape {
-  const e = error as { response?: { status: number; statusText: string; data?: { message?: string } } };
+  const e = error as {
+    response?: {
+      status: number;
+      statusText: string;
+      data?: { message?: string };
+    };
+  };
   return {
     status: e.response?.status ?? 0,
     statusText: e.response?.statusText ?? "",
@@ -29,7 +35,9 @@ export function handlerServerErrors(error: unknown): ServerErrorShape {
   };
 }
 
-export function getHeightAndWidthFromDataUrl1(dataURL: string): Promise<ImageResolution> {
+export function getHeightAndWidthFromDataUrl1(
+  dataURL: string,
+): Promise<ImageResolution> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve({ height: img.height, width: img.width });
@@ -37,7 +45,9 @@ export function getHeightAndWidthFromDataUrl1(dataURL: string): Promise<ImageRes
   });
 }
 
-export function getHeightAndWidthFromDataUrl(file: File): Promise<ImageResolution> {
+export function getHeightAndWidthFromDataUrl(
+  file: File,
+): Promise<ImageResolution> {
   const src = URL.createObjectURL(file);
   return new Promise((resolve) => {
     const img = new Image();

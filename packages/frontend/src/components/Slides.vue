@@ -1,26 +1,44 @@
 <template>
-  <ul class="dashboard-slides" v-if="slides && slides.length">
+  <ul v-if="slides && slides.length" class="dashboard-slides">
     <li
       v-for="(item, index) in slides"
       :key="index"
       :class="[
         'dashboard-slides__item',
-        { 'type-video': item.type === 'video' }
+        { 'type-video': item.type === 'video' },
       ]"
     >
       <div class="dashboard-slides__top">
         <h4 class="dashboard-slides__title">{{ item.title }}</h4>
         <div class="dashboard-slides__btns">
-          <button type="button" class="dashboard__btn-inline" title="order" disabled>
+          <button
+            type="button"
+            class="dashboard__btn-inline"
+            title="order"
+            disabled
+          >
             {{ item.order }}
           </button>
-          <button type="submit" class="dashboard__btn-inline" @click="emit('edit', item.id)">
+          <button
+            type="submit"
+            class="dashboard__btn-inline"
+            @click="emit('edit', item.id)"
+          >
             Edit
           </button>
-          <button type="button" class="dashboard__btn-inline" @click="emit('delete', item.id)">
+          <button
+            type="button"
+            class="dashboard__btn-inline"
+            @click="emit('delete', item.id)"
+          >
             Delete
           </button>
-          <button type="button" class="dashboard__btn-inline" title="id" disabled>
+          <button
+            type="button"
+            class="dashboard__btn-inline"
+            title="id"
+            disabled
+          >
             id:{{ item.id }}
           </button>
         </div>

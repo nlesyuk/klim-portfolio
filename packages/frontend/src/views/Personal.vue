@@ -5,7 +5,7 @@
         v-for="(photo, idx) in photos"
         :key="idx"
         :collection="photo"
-        :collectionType="idx % 2 ? 'left' : 'right'"
+        :collection-type="idx % 2 ? 'left' : 'right'"
       />
     </template>
     <p v-else-if="photos && photos.length === 0" class="home__empty-category">
@@ -33,5 +33,7 @@ const photos = computed(() => {
     : all.filter((item) => item.categories?.includes("personal"));
 });
 
-onMounted(() => { setTitle("Photos"); });
+onMounted(() => {
+  setTitle("Photos");
+});
 </script>

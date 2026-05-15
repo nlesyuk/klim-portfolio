@@ -19,7 +19,7 @@ const repositories = {
 export type RepositoryName = keyof typeof repositories;
 
 export const RepositoryFactory = {
-  get<K extends RepositoryName>(name: K): typeof repositories[K] {
+  get<K extends RepositoryName>(name: K): (typeof repositories)[K] {
     return repositories[name];
   },
 };

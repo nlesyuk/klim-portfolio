@@ -77,10 +77,10 @@ Decouple build migration from framework migration so each step is verifiable.
 2. ✅ **Replace `node-sass` with `sass`** (dart-sass).
 3. ✅ **`package.json` rewritten** — `@vue/cli-*` removed, Vite 5 + `vue-tsc` added.
 4. ✅ **`public/index.html`** — webpack template vars removed, `<script type="module" src="/src/main.ts">` added.
-5. ⬜ **ESLint:** upgrade to `eslint-plugin-vue@9`, Prettier 3, `@typescript-eslint@7+`.
+5. ✅ **ESLint upgraded** — `.eslintrc.js` rewritten for `eslint-plugin-vue@9` (`plugin:vue/vue3-recommended`), `@vue/eslint-config-typescript@13`, `@vue/eslint-config-prettier@9`, Prettier 3. Dropped Vue 2-era `@vue/typescript/recommended` + `@vue/prettier/@typescript-eslint` chain. `vue/multi-word-component-names` disabled to keep `Nav.vue`, `Footer.vue`, etc. `npm run lint` clean (0 errors, 28 stylistic warnings — `no-console` in catch blocks + minor prettier). One `vue/no-mutating-props` suppression in `ShotEdit.vue` with `TODO(Phase 8)` to refactor to local-draft + emit.
 
 **Exit criteria:** App runs on Vite, builds clean, eslint passes, no Vue CLI deps in `package.json`.
-> ✅ Toolchain swapped. ESLint upgrade deferred.
+> ✅ Done.
 
 ---
 

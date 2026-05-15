@@ -43,5 +43,7 @@ const restPhotos = computed(() => {
   return previews?.length ? previews : [];
 });
 
-onMounted(() => { setTitle("Photo"); });
+onMounted(() => {
+  setTitle("Photo");
+});
 </script>

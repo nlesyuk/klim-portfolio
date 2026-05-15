@@ -1,23 +1,29 @@
 <template>
   <section class="dashboard-works">
-    <button class="dashboard__btn" @click="isShowAddWork = !isShowAddWork">Add work</button>
+    <button class="dashboard__btn" @click="isShowAddWork = !isShowAddWork">
+      Add work
+    </button>
     <WorkAdd
       v-if="isShowAddWork"
       :work="work"
       :works="videos"
-      :isEdit="isEdit"
-      @resetForm="isEdit = false"
+      :is-edit="isEdit"
+      @reset-form="isEdit = false"
       @work-create-successfully="refresh"
     />
-    <button type="button" @click="refresh" class="dashboard__btn">Refresh works</button>
+    <button type="button" class="dashboard__btn" @click="refresh">
+      Refresh works
+    </button>
     <WorksGrid
       v-if="videos && videos.length"
       :works="videos"
-      :isAdmin="true"
+      :is-admin="true"
       @delete="onDelete"
       @edit="onEdit"
     />
-    <div v-else-if="videos && videos.length === 0" class="grid-empty">Don't have any items yet</div>
+    <div v-else-if="videos && videos.length === 0" class="grid-empty">
+      Don't have any items yet
+    </div>
     <Spiner v-else />
   </section>
 </template>
@@ -42,7 +48,9 @@ const isShowAddWork = ref(false);
 
 const videos = computed(() => data.value);
 
-function refresh() { qc.invalidateQueries({ queryKey: queryKeys.videos() }); }
+function refresh() {
+  qc.invalidateQueries({ queryKey: queryKeys.videos() });
+}
 
 function onEdit(id: number) {
   isEdit.value = true;
@@ -51,5 +59,7 @@ function onEdit(id: number) {
   isShowAddWork.value = true;
 }
 
-function onDelete(id: number) { deleteVideo(id); }
+function onDelete(id: number) {
+  deleteVideo(id);
+}
 </script>

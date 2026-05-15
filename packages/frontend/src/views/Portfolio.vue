@@ -5,10 +5,13 @@
         v-for="(photo, idx) in allPhotos"
         :key="idx"
         :collection="photo"
-        :collectionType="idx % 2 ? 'left' : 'right'"
+        :collection-type="idx % 2 ? 'left' : 'right'"
       />
     </template>
-    <p v-else-if="allPhotos && allPhotos.length === 0" class="home__empty-category">
+    <p
+      v-else-if="allPhotos && allPhotos.length === 0"
+      class="home__empty-category"
+    >
       Don't have any photo collections yet
     </p>
     <Spiner v-else />
@@ -30,8 +33,12 @@ const allPhotos = computed(() => {
   const photos = data.value;
   const category = route.query.filter as string | undefined;
   if (category === "all" || !category) return photos;
-  return photos?.filter((item) => item.categories?.includes(category)) ?? photos;
+  return (
+    photos?.filter((item) => item.categories?.includes(category)) ?? photos
+  );
 });
 
-onMounted(() => { setTitle("Portfolio"); });
+onMounted(() => {
+  setTitle("Portfolio");
+});
 </script>

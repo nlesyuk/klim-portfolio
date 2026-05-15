@@ -21,7 +21,9 @@ import { useAuthStore } from "@/stores/auth";
 import { useContactsQuery } from "@/composables/useContacts";
 import { themeInstance, themes } from "@/helper";
 
-const TheDashboardNav = defineAsyncComponent(() => import("./views/dashboard/TheDashboardNav.vue"));
+const TheDashboardNav = defineAsyncComponent(
+  () => import("./views/dashboard/TheDashboardNav.vue"),
+);
 
 const authStore = useAuthStore();
 const { theme } = useContactsQuery();
@@ -35,5 +37,7 @@ watch(theme, (themeName) => {
   }
 });
 
-onMounted(() => { themeInstance.init(); });
+onMounted(() => {
+  themeInstance.init();
+});
 </script>

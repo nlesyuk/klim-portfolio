@@ -2,7 +2,10 @@
   <div class="home">
     <Slider />
     <WorksGrid v-if="allVideos && allVideos.length" :works="allVideos" />
-    <p v-else-if="allVideos && allVideos.length === 0" class="home__empty-category">
+    <p
+      v-else-if="allVideos && allVideos.length === 0"
+      class="home__empty-category"
+    >
       Don't have any works yet
     </p>
     <Spiner v-else />
@@ -29,5 +32,7 @@ const allVideos = computed(() => {
   return data.value;
 });
 
-onMounted(() => { setTitle("Works"); });
+onMounted(() => {
+  setTitle("Works");
+});
 </script>

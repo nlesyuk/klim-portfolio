@@ -21,7 +21,10 @@ class AuthService {
     return AuthService.instance;
   }
 
-  async login(userCredentials: { username: string; password: string }): Promise<User> {
+  async login(userCredentials: {
+    username: string;
+    password: string;
+  }): Promise<User> {
     try {
       const res = await AuthRepository.signin(userCredentials);
       const user = res?.data as User;
@@ -50,7 +53,11 @@ class AuthService {
     }
   }
 
-  async signup(user: { username: string; email: string; password: string }): Promise<boolean> {
+  async signup(user: {
+    username: string;
+    email: string;
+    password: string;
+  }): Promise<boolean> {
     try {
       if (user) {
         await AuthRepository.signup(user);

@@ -1,31 +1,73 @@
 <template>
   <section class="dashboard-contacts">
-    <form class="dashboard__form dashboard__form--contacts" @submit.prevent="submit">
+    <form
+      class="dashboard__form dashboard__form--contacts"
+      @submit.prevent="submit"
+    >
       <!-- BASE FIELDS -->
       <div class="dashboard__form-item">
-        <label :class="['dashboard__label', { 'dashboard__label-error': v$.email.$dirty && v$.email.$error }]">
+        <label
+          :class="[
+            'dashboard__label',
+            { 'dashboard__label-error': v$.email.$dirty && v$.email.$error },
+          ]"
+        >
           <span>email</span>
-          <input type="email" v-model="email" />
+          <input v-model="email" type="email" />
         </label>
-        <label :class="['dashboard__label', { 'dashboard__label-error': v$.phone.$dirty && v$.phone.$error }]">
+        <label
+          :class="[
+            'dashboard__label',
+            { 'dashboard__label-error': v$.phone.$dirty && v$.phone.$error },
+          ]"
+        >
           <span>phone</span>
-          <input type="text" v-model="phone" />
+          <input v-model="phone" type="text" />
         </label>
-        <label :class="['dashboard__label', { 'dashboard__label-error': v$.vimeo.$dirty && v$.vimeo.$error }]">
+        <label
+          :class="[
+            'dashboard__label',
+            { 'dashboard__label-error': v$.vimeo.$dirty && v$.vimeo.$error },
+          ]"
+        >
           <span>vimeo</span>
-          <input type="text" v-model="vimeo" />
+          <input v-model="vimeo" type="text" />
         </label>
-        <label :class="['dashboard__label', { 'dashboard__label-error': v$.facebook.$dirty && v$.facebook.$error }]">
+        <label
+          :class="[
+            'dashboard__label',
+            {
+              'dashboard__label-error':
+                v$.facebook.$dirty && v$.facebook.$error,
+            },
+          ]"
+        >
           <span>facebook</span>
-          <input type="text" v-model="facebook" />
+          <input v-model="facebook" type="text" />
         </label>
-        <label :class="['dashboard__label', { 'dashboard__label-error': v$.telegram.$dirty && v$.telegram.$error }]">
+        <label
+          :class="[
+            'dashboard__label',
+            {
+              'dashboard__label-error':
+                v$.telegram.$dirty && v$.telegram.$error,
+            },
+          ]"
+        >
           <span>telegram</span>
-          <input type="text" v-model="telegram" />
+          <input v-model="telegram" type="text" />
         </label>
-        <label :class="['dashboard__label', { 'dashboard__label-error': v$.instagram.$dirty && v$.instagram.$error }]">
+        <label
+          :class="[
+            'dashboard__label',
+            {
+              'dashboard__label-error':
+                v$.instagram.$dirty && v$.instagram.$error,
+            },
+          ]"
+        >
           <span>instagram</span>
-          <input type="text" v-model="instagram" />
+          <input v-model="instagram" type="text" />
         </label>
       </div>
 
@@ -35,14 +77,14 @@
           <span>Description</span>
           <RichEditor v-model="description" placeholder="description" />
         </label>
-        <ThemeToggle :currentTheme="theme" @onThemeChange="setTheme" />
+        <ThemeToggle :current-theme="theme" @on-theme-change="setTheme" />
       </div>
 
       <!-- PHOTO -->
       <div class="dashboard__form-item">
         <div class="dashboard__label">
           <span>Upload photo</span>
-          <input type="file" multiple @change="getFiles" ref="filesInput" />
+          <input ref="filesInput" type="file" multiple @change="getFiles" />
         </div>
         <ul class="dashboard__list-imgs dashboard__list-imgs--single">
           <li v-for="(file, idx) in selectedImages" :key="idx">
@@ -55,15 +97,23 @@
 
       <!-- SUBMIT -->
       <div class="dashboard__btns-container">
-        <button type="submit" class="dashboard__submit" :disabled="!isDataTheSame">
+        <button
+          type="submit"
+          class="dashboard__submit"
+          :disabled="!isDataTheSame"
+        >
           {{ isContactAlreadyExist ? "Update" : "Create" }}
         </button>
-        <button type="reset" class="dashboard__submit" @click="reset">Reset</button>
+        <button type="reset" class="dashboard__submit" @click="reset">
+          Reset
+        </button>
         <div class="dashboard__status">
-          <div class="dashboard__status--success" v-if="isSuccess">Success</div>
-          <div class="dashboard__status--fail" v-if="serverError">Server error: {{ serverError }}</div>
+          <div v-if="isSuccess" class="dashboard__status--success">Success</div>
+          <div v-if="serverError" class="dashboard__status--fail">
+            Server error: {{ serverError }}
+          </div>
         </div>
-        <Spiner v-if="isLoading" :isCenter="false" />
+        <Spiner v-if="isLoading" :is-center="false" />
       </div>
     </form>
   </section>
@@ -73,7 +123,11 @@
 import { ref, watch, onMounted } from "vue";
 import useVuelidate from "@vuelidate/core";
 import { required } from "@vuelidate/validators";
-import { useContactsQuery, useCreateContacts, useUpdateContacts } from "@/composables/useContacts";
+import {
+  useContactsQuery,
+  useCreateContacts,
+  useUpdateContacts,
+} from "@/composables/useContacts";
 import { themeInstance } from "@/helper";
 import RichEditor from "@/components/RichEditor.vue";
 import ThemeToggle from "./ThemeToggle.vue";
@@ -109,7 +163,14 @@ const rules = {
   instagram: {},
 };
 
-const v$ = useVuelidate(rules, { email, phone, vimeo, facebook, telegram, instagram });
+const v$ = useVuelidate(rules, {
+  email,
+  phone,
+  vimeo,
+  facebook,
+  telegram,
+  instagram,
+});
 
 const isDataTheSame = true;
 
@@ -123,7 +184,8 @@ function setContacts(contacts: Record<string, unknown> | null | undefined) {
   telegram.value = contacts.telegram as string;
   instagram.value = contacts.instagram as string;
   description.value = (contacts.description as string) ?? "";
-  if (contacts.image) selectedImages.value.push({ src: contacts.image as string });
+  if (contacts.image)
+    selectedImages.value.push({ src: contacts.image as string });
   isContactAlreadyExist.value = true;
 }
 
@@ -175,7 +237,9 @@ async function submit() {
 
   const onSettled = () => {
     isSuccess.value = true;
-    setTimeout(() => { isSuccess.value = false; }, 10_000);
+    setTimeout(() => {
+      isSuccess.value = false;
+    }, 10_000);
   };
   if (isContactAlreadyExist.value) {
     updateContacts(formData, { onSettled });
@@ -184,9 +248,13 @@ async function submit() {
   }
 }
 
-watch(contactsData, (c) => {
-  setContacts(c as Record<string, unknown> | undefined);
-}, { immediate: true });
+watch(
+  contactsData,
+  (c) => {
+    setContacts(c as Record<string, unknown> | undefined);
+  },
+  { immediate: true },
+);
 
 watch([isCreating, isUpdating], ([a, b]) => {
   isLoading.value = a || b;

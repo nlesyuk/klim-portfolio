@@ -4,7 +4,11 @@
     :slides-per-view="1"
     :loop="true"
     :centered-slides="true"
-    :autoplay="{ delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true }"
+    :autoplay="{
+      delay: 5000,
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+    }"
     :pagination="{ clickable: true }"
     :navigation="true"
     style="margin-bottom: 20px"
@@ -13,9 +17,9 @@
     <swiper-slide v-for="(slide, idx) in sortedSlides" :key="idx">
       <SlideComponent
         :source="slide"
-        :slideId="idx"
-        :currentSlide="currentSlide"
-        :allSlides="sortedSlides.length"
+        :slide-id="idx"
+        :current-slide="currentSlide"
+        :all-slides="sortedSlides.length"
       />
     </swiper-slide>
   </swiper>

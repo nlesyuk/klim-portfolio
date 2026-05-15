@@ -1,12 +1,25 @@
 <template>
   <section class="login">
     <form action="#" class="login__form" @submit.prevent="getLogin">
-      <img src="//ssl.gstatic.com/accounts/ui/avatar_2x.png" class="login__profile-img" />
+      <img
+        src="//ssl.gstatic.com/accounts/ui/avatar_2x.png"
+        class="login__profile-img"
+      />
       <label class="login__label">
-        <input type="text" name="email" v-model="username" placeholder="username" />
+        <input
+          v-model="username"
+          type="text"
+          name="email"
+          placeholder="username"
+        />
       </label>
       <label class="login__label">
-        <input type="password" name="password" v-model="password" placeholder="password" />
+        <input
+          v-model="password"
+          type="password"
+          name="password"
+          placeholder="password"
+        />
       </label>
       <button type="submit" class="login__btn">Login</button>
       <p v-if="loading">Loading...</p>
@@ -31,7 +44,9 @@ const error = ref<unknown>(null);
 const loading = ref(false);
 
 const loggedIn = computed(() => authStore.loggedIn);
-const userRefreshToken = computed(() => (authStore.user as Record<string, unknown> | null)?.refreshToken);
+const userRefreshToken = computed(
+  () => (authStore.user as Record<string, unknown> | null)?.refreshToken,
+);
 
 onMounted(async () => {
   if (!loggedIn.value && userRefreshToken.value) {
@@ -51,7 +66,10 @@ onMounted(async () => {
 async function getLogin() {
   try {
     loading.value = true;
-    await authStore.login({ username: username.value, password: password.value });
+    await authStore.login({
+      username: username.value,
+      password: password.value,
+    });
     router.push("/dashboard");
     error.value = "";
   } catch (err) {

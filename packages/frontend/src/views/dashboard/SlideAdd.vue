@@ -1,6 +1,9 @@
 <template>
   <section class="dashboard-works-add">
-    <form class="dashboard__form dashboard__form--preview" @submit.prevent="submit">
+    <form
+      class="dashboard__form dashboard__form--preview"
+      @submit.prevent="submit"
+    >
       <div class="dashboard__side">
         <!-- id -->
         <label v-if="slide" class="dashboard__label">
@@ -11,12 +14,15 @@
         <label
           :class="[
             'dashboard__label',
-            { 'dashboard__label-error': v$.title.$dirty && v$.title.$error }
+            { 'dashboard__label-error': v$.title.$dirty && v$.title.$error },
           ]"
         >
           <span>Title</span>
-          <input type="text" v-model="slideFields.title" />
-          <strong class="dashboard__label-error-info" v-if="v$.title.$dirty && v$.title.$error">
+          <input v-model="slideFields.title" type="text" />
+          <strong
+            v-if="v$.title.$dirty && v$.title.$error"
+            class="dashboard__label-error-info"
+          >
             Min length is 2
           </strong>
         </label>
@@ -26,7 +32,11 @@
           <span>Order</span>
           <select v-model="slideFields.order">
             <option disabled selected value="null">Please choose order</option>
-            <option v-for="(item, index) of slidersLength" :key="index" :value="index">
+            <option
+              v-for="(item, index) of slidersLength"
+              :key="index"
+              :value="index"
+            >
               {{ index }}
             </option>
           </select>
@@ -34,10 +44,17 @@
 
         <!-- Work -->
         <label class="dashboard__label">
-          <span>Link slide to work <b v-if="slideFields.workId === ''">- DISABLED</b></span>
+          <span
+            >Link slide to work
+            <b v-if="slideFields.workId === ''">- DISABLED</b></span
+          >
           <select v-model="slideFields.workId">
             <option disabled selected value="null">Please choose work</option>
-            <option v-for="(item, index) of preparedWorks" :key="index" :value="item.id">
+            <option
+              v-for="(item, index) of preparedWorks"
+              :key="index"
+              :value="item.id"
+            >
               {{ item.id + ": " + item.title }}
             </option>
           </select>
@@ -45,10 +62,19 @@
 
         <!-- Photo -->
         <label class="dashboard__label">
-          <span>Link slide to photo collection <b v-if="slideFields.photoId === ''">- DISABLED</b></span>
+          <span
+            >Link slide to photo collection
+            <b v-if="slideFields.photoId === ''">- DISABLED</b></span
+          >
           <select v-model="slideFields.photoId">
-            <option disabled selected value="null">Please choose photo collection</option>
-            <option v-for="(item, index) of preparedPhotos" :key="index" :value="item.id">
+            <option disabled selected value="null">
+              Please choose photo collection
+            </option>
+            <option
+              v-for="(item, index) of preparedPhotos"
+              :key="index"
+              :value="item.id"
+            >
               {{ item.id + ": " + item.title }}
             </option>
           </select>
@@ -58,11 +84,23 @@
         <label class="dashboard__label">
           <span>Type of slide</span>
           <label class="dashboard__label mb0">
-            <input type="radio" name="type" value="image" v-model="slideFields.type" :disabled="isEdit" />
+            <input
+              v-model="slideFields.type"
+              type="radio"
+              name="type"
+              value="image"
+              :disabled="isEdit"
+            />
             <span class="inline">image</span>
           </label>
           <label class="dashboard__label">
-            <input type="radio" name="type" value="video" v-model="slideFields.type" :disabled="isEdit" />
+            <input
+              v-model="slideFields.type"
+              type="radio"
+              name="type"
+              value="video"
+              :disabled="isEdit"
+            />
             <span class="inline">video</span>
           </label>
         </label>
@@ -71,13 +109,15 @@
         <template v-if="slideFields.type === 'image'">
           <div class="dashboard__label">
             <span>Upload photo</span>
-            <input type="file" @change="getFiles" ref="filesInput" />
+            <input ref="filesInput" type="file" @change="getFiles" />
           </div>
           <div class="dashboard__label">
             <ul class="dashboard__list-imgs">
               <li v-for="(file, idx) in slideFields.images" :key="idx">
                 <span class="dashboard__badge badge-yellow">{{ idx + 1 }}</span>
-                <button type="button" @click="removeSelectedImage(file.src)">remove</button>
+                <button type="button" @click="removeSelectedImage(file.src)">
+                  remove
+                </button>
                 <img class="mb16" :src="file.src" alt="add" />
               </li>
             </ul>
@@ -87,36 +127,79 @@
         <template v-else>
           <label class="dashboard__label">
             <span>Vimeo video</span>
-            <input type="text" v-model="slideFields.videos.vimeoId" placeholder="vimeo ID" />
+            <input
+              v-model="slideFields.videos.vimeoId"
+              type="text"
+              placeholder="vimeo ID"
+            />
           </label>
         </template>
 
         <!-- client errors -->
         <label class="dashboard__label">
           <ul v-if="clientErrors.length" class="dashboard__error-list">
-            <li v-for="error in clientErrors" :key="error"><span>{{ error }}</span></li>
+            <li v-for="error in clientErrors" :key="error">
+              <span>{{ error }}</span>
+            </li>
           </ul>
         </label>
 
         <!-- btns -->
         <div class="dashboard__btns-container">
-          <button type="submit" class="dashboard__submit" v-if="isEdit" :disabled="isLoading">Update</button>
-          <button type="submit" class="dashboard__submit" v-else :disabled="isLoading">Add</button>
-          <button type="reset" class="dashboard__submit" @click="reset" :disabled="isLoading">Reset</button>
+          <button
+            v-if="isEdit"
+            type="submit"
+            class="dashboard__submit"
+            :disabled="isLoading"
+          >
+            Update
+          </button>
+          <button
+            v-else
+            type="submit"
+            class="dashboard__submit"
+            :disabled="isLoading"
+          >
+            Add
+          </button>
+          <button
+            type="reset"
+            class="dashboard__submit"
+            :disabled="isLoading"
+            @click="reset"
+          >
+            Reset
+          </button>
           <div class="dashboard__status">
-            <div class="dashboard__status--success" v-if="isSuccess">Success</div>
-            <div class="dashboard__status--fail" v-if="serverError">Server error: {{ serverError }}</div>
+            <div v-if="isSuccess" class="dashboard__status--success">
+              Success
+            </div>
+            <div v-if="serverError" class="dashboard__status--fail">
+              Server error: {{ serverError }}
+            </div>
           </div>
-          <Spiner v-if="isLoading" :isCenter="false" />
+          <Spiner v-if="isLoading" :is-center="false" />
         </div>
       </div>
 
       <div class="dashboard__side dashboard__area-preview">
         <div class="dashboard-works-add__preview-cont">
-          <template v-if="slideFields.type === 'image' && slideFields.images.length">
-            <img class="dashboard__img" v-for="(item, index) in slideFields.images" :key="index" :src="item.src" alt="image" />
+          <template
+            v-if="slideFields.type === 'image' && slideFields.images.length"
+          >
+            <img
+              v-for="(item, index) in slideFields.images"
+              :key="index"
+              class="dashboard__img"
+              :src="item.src"
+              alt="image"
+            />
           </template>
-          <template v-else-if="slideFields.type === 'video' && slideFields.videos.vimeoId">
+          <template
+            v-else-if="
+              slideFields.type === 'video' && slideFields.videos.vimeoId
+            "
+          >
             <VimeoVideoPlayer :id="slideFields.videos.vimeoId" />
           </template>
         </div>
@@ -192,7 +275,9 @@ const preparedPhotos = computed(() => {
 
 watch(
   () => props.slide,
-  () => { if (props.isEdit) setDataForEdit(); }
+  () => {
+    if (props.isEdit) setDataForEdit();
+  },
 );
 
 function reset() {
@@ -210,14 +295,21 @@ function getFiles() {
   if (!files) return;
   Array.from(files).forEach((file) => {
     getHeightAndWidthFromDataUrl(file).then((resolution) => {
-      const format = resolution.height > resolution.width ? "vertical" : "horizontal";
-      slideFields.value.images.push({ file, format, src: URL.createObjectURL(file) });
+      const format =
+        resolution.height > resolution.width ? "vertical" : "horizontal";
+      slideFields.value.images.push({
+        file,
+        format,
+        src: URL.createObjectURL(file),
+      });
     });
   });
 }
 
 function removeSelectedImage(src: string) {
-  slideFields.value.images = slideFields.value.images.filter((v) => v.src !== src);
+  slideFields.value.images = slideFields.value.images.filter(
+    (v) => v.src !== src,
+  );
 }
 
 function setOrder() {
@@ -238,7 +330,9 @@ function setServerStatusInUI(isOk: boolean, statusText?: string) {
     serverError.value = null;
   } else {
     serverError.value = statusText ?? null;
-    setTimeout(() => { serverError.value = null; }, 20_000);
+    setTimeout(() => {
+      serverError.value = null;
+    }, 20_000);
   }
 }
 
@@ -251,26 +345,47 @@ async function submit() {
   const isImage = type === "image";
 
   if (isImage) {
-    if (!images.length) { clientErrors.value.push("Please select at least one image"); return; }
+    if (!images.length) {
+      clientErrors.value.push("Please select at least one image");
+      return;
+    }
   } else if (type === "video") {
-    if (!videos.vimeoId) { clientErrors.value.push("Please provide vimeo video ID"); return; }
+    if (!videos.vimeoId) {
+      clientErrors.value.push("Please provide vimeo video ID");
+      return;
+    }
   } else {
-    clientErrors.value.push("Something went wrong"); return;
+    clientErrors.value.push("Something went wrong");
+    return;
   }
 
   if (order == null || !Number.isInteger(+String(order))) {
-    clientErrors.value.push(`Please fill up the order field, now is ${order}`); return;
+    clientErrors.value.push(`Please fill up the order field, now is ${order}`);
+    return;
   }
   if (!workId && !photoId) {
-    clientErrors.value.push("Please fill work or photo ID field"); return;
+    clientErrors.value.push("Please fill work or photo ID field");
+    return;
   }
 
-  if (props.isEdit) { update(isImage); } else { create(isImage); }
+  if (props.isEdit) {
+    update(isImage);
+  } else {
+    create(isImage);
+  }
 }
 
 function create(isImage: boolean) {
   try {
-    const { title: t, order, type, videos, images, workId, photoId } = slideFields.value;
+    const {
+      title: t,
+      order,
+      type,
+      videos,
+      images,
+      workId,
+      photoId,
+    } = slideFields.value;
     const formData = new FormData();
     formData.append("type", type);
     formData.append("title", t);
@@ -279,19 +394,31 @@ function create(isImage: boolean) {
     if (photoId || photoId === "") formData.append("photoId", String(photoId));
 
     if (isImage) {
-      for (const photo of images) { if (photo.file) formData.append("photos[]", photo.file); }
+      for (const photo of images) {
+        if (photo.file) formData.append("photos[]", photo.file);
+      }
     } else {
       formData.append("videos", JSON.stringify(videos));
     }
 
     isLoading.value = true;
     createSlide(formData)
-      .then(() => { reset(); setServerStatusInUI(true); })
+      .then(() => {
+        reset();
+        setServerStatusInUI(true);
+      })
       .catch((e: unknown) => {
         console.error(e);
-        setServerStatusInUI(false, (e as { response?: { data?: { message?: string } } })?.response?.data?.message);
+        setServerStatusInUI(
+          false,
+          (e as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message,
+        );
       })
-      .finally(() => { isLoading.value = false; clientErrors.value = []; });
+      .finally(() => {
+        isLoading.value = false;
+        clientErrors.value = [];
+      });
   } catch (err) {
     console.error("AddSlide ERROR", err);
   }
@@ -307,7 +434,9 @@ function setDataForEdit() {
   slideFields.value.order = order;
   slideFields.value.images = [{ src: image as string }];
   slideFields.value.videos = videos
-    ? typeof videos === "string" ? JSON.parse(videos) : { ...(videos as object) }
+    ? typeof videos === "string"
+      ? JSON.parse(videos)
+      : { ...(videos as object) }
     : { vimeoId: null };
   slideFields.value.workId = workId;
   slideFields.value.photoId = photoId;
@@ -315,7 +444,16 @@ function setDataForEdit() {
 
 function update(isImage: boolean) {
   try {
-    const { id, title: t, order, type, videos, images, workId, photoId } = slideFields.value;
+    const {
+      id,
+      title: t,
+      order,
+      type,
+      videos,
+      images,
+      workId,
+      photoId,
+    } = slideFields.value;
     const formData = new FormData();
     formData.append("id", String(id));
     formData.append("type", type);
@@ -326,19 +464,30 @@ function update(isImage: boolean) {
 
     const image = images?.[0];
     if (isImage) {
-      if (image?.src?.includes("blob") && image.file) formData.append("photos[]", image.file);
+      if (image?.src?.includes("blob") && image.file)
+        formData.append("photos[]", image.file);
     } else {
       formData.append("videos", JSON.stringify(videos));
     }
 
     isLoading.value = true;
     updateSlide(formData)
-      .then(() => { reset(); setServerStatusInUI(true); })
+      .then(() => {
+        reset();
+        setServerStatusInUI(true);
+      })
       .catch((e: unknown) => {
         console.error(e);
-        setServerStatusInUI(false, (e as { response?: { data?: { message?: string } } })?.response?.data?.message);
+        setServerStatusInUI(
+          false,
+          (e as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message,
+        );
       })
-      .finally(() => { isLoading.value = false; clientErrors.value = []; });
+      .finally(() => {
+        isLoading.value = false;
+        clientErrors.value = [];
+      });
   } catch (err) {
     console.error("AddSlide ERROR", err);
   }

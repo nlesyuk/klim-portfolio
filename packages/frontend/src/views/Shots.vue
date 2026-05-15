@@ -2,18 +2,22 @@
   <div class="shots">
     <div class="shots__tags">
       <button
-        type="button"
         v-for="(name, idx) in categories"
         :key="idx"
-        @click="changeFilter(name)"
+        type="button"
         :class="['btn', 'btn-primary', { active: filter === name }]"
+        @click="changeFilter(name)"
       >
         {{ name }}
       </button>
     </div>
     <transition name="fade" mode="out-in">
       <template v-if="toggle">
-        <PhotosGrid v-if="filteredShots.length" :images="filteredShots" :is-shots="true" />
+        <PhotosGrid
+          v-if="filteredShots.length"
+          :images="filteredShots"
+          :is-shots="true"
+        />
         <p v-else-if="filteredShots.length === 0" class="home__empty-category">
           Don't have any shots yet
         </p>
@@ -52,5 +56,7 @@ function changeFilter(f: string) {
   }
 }
 
-onMounted(() => { setTitle("Shots"); });
+onMounted(() => {
+  setTitle("Shots");
+});
 </script>

@@ -10,17 +10,30 @@
         </button>
       </li>
       <li>
-        <button class="dashboard__menu-item1 dashboard__menu-logout" role="logout" @click="logoutFn">
-          <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
-            <path d="M16 2v7h-2v-5h-12v16h12v-5h2v7h-16v-20h16zm2 9v-4l6 5-6 5v-4h-10v-2h10z" />
+        <button
+          class="dashboard__menu-item1 dashboard__menu-logout"
+          role="logout"
+          @click="logoutFn"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+          >
+            <path
+              d="M16 2v7h-2v-5h-12v16h12v-5h2v7h-16v-20h16zm2 9v-4l6 5-6 5v-4h-10v-2h10z"
+            />
           </svg>
         </button>
       </li>
     </ul>
     <router-view />
     <h2
-      class="dashboard__title dashboard__title--center dashboard__title--big-border"
       v-if="isDashboardRoute"
+      class="dashboard__title dashboard__title--center dashboard__title--big-border"
     >
       Hello, {{ username }}!
     </h2>
@@ -41,7 +54,9 @@ const menuItems = menu;
 
 const isDashboardRoute = computed(() => route.name === "dashboard");
 const username = computed(() => {
-  const name = (authStore.user as Record<string, unknown> | null)?.username as string | undefined;
+  const name = (authStore.user as Record<string, unknown> | null)?.username as
+    | string
+    | undefined;
   return name ? name.toUpperCase() : "Anonymous";
 });
 

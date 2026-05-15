@@ -1,5 +1,5 @@
 <template>
-  <section class="dashboard-nav" v-if="!isDashboard">
+  <section v-if="!isDashboard" class="dashboard-nav">
     <nav class="dashboard-nav__menu">
       <button
         v-for="item in menuItems"
@@ -9,12 +9,24 @@
       >
         {{ item }}
       </button>
-      <button class="dashboard-nav__menu-item" @click="router.push({ name: 'dashboard' })">
+      <button
+        class="dashboard-nav__menu-item"
+        @click="router.push({ name: 'dashboard' })"
+      >
         dashboard
       </button>
       <button class="dashboard-nav__menu-item" role="logout" @click="logoutFn">
-        <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
-          <path d="M16 2v7h-2v-5h-12v16h12v-5h2v7h-16v-20h16zm2 9v-4l6 5-6 5v-4h-10v-2h10z" />
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+        >
+          <path
+            d="M16 2v7h-2v-5h-12v16h12v-5h2v7h-16v-20h16zm2 9v-4l6 5-6 5v-4h-10v-2h10z"
+          />
         </svg>
       </button>
     </nav>
@@ -34,7 +46,7 @@ const authStore = useAuthStore();
 const menuItems = menu;
 
 const isDashboard = computed(() =>
-  route.path.split("/").some((v) => ["dashboard"].includes(v))
+  route.path.split("/").some((v) => ["dashboard"].includes(v)),
 );
 
 async function logoutFn() {
@@ -63,7 +75,9 @@ $colorHover: rgb(75, 75, 75);
   z-index: 101;
   transform: translate(-50%, -50%);
   border-radius: 5px;
-  box-shadow: rgb(204, 219, 232) 3px 3px 6px 0px inset, rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset;
+  box-shadow:
+    rgb(204, 219, 232) 3px 3px 6px 0px inset,
+    rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset;
 
   &__menu {
     width: 100%;
@@ -83,10 +97,16 @@ $colorHover: rgb(75, 75, 75);
       &:hover {
         color: $colorHover;
         transition: all 0.25s;
-        svg { fill: $colorHover; transition: all 0.25s; }
+        svg {
+          fill: $colorHover;
+          transition: all 0.25s;
+        }
       }
 
-      svg { fill: $color; transition: all 0.25s; }
+      svg {
+        fill: $color;
+        transition: all 0.25s;
+      }
     }
   }
 }

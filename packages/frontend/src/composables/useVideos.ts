@@ -13,7 +13,9 @@ export function useVideosQuery() {
   });
 }
 
-export function useVideoQuery(id: MaybeRefOrGetter<number | string | undefined>) {
+export function useVideoQuery(
+  id: MaybeRefOrGetter<number | string | undefined>,
+) {
   return useQuery<Work>({
     queryKey: computed(() => [...queryKeys.videos(), toValue(id)]),
     queryFn: () => VideosRepo.getVideo(toValue(id)).then((r) => r.data),

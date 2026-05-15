@@ -9,7 +9,9 @@ import { watch, onBeforeUnmount } from "vue";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 
-const props = withDefaults(defineProps<{ modelValue?: string }>(), { modelValue: "" });
+const props = withDefaults(defineProps<{ modelValue?: string }>(), {
+  modelValue: "",
+});
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
 const editor = useEditor({
@@ -26,7 +28,7 @@ watch(
     if (editor.value && editor.value.getHTML() !== v) {
       editor.value.commands.setContent(v || "", false);
     }
-  }
+  },
 );
 
 onBeforeUnmount(() => editor.value?.destroy());

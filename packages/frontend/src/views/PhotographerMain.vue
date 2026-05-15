@@ -1,8 +1,14 @@
 <template>
   <div class="home">
     <Slider />
-    <PhotosPreviewGrid v-if="allPhotos && allPhotos.length" :photos="allPhotos" />
-    <p v-else-if="allPhotos && allPhotos.length === 0" class="home__empty-category">
+    <PhotosPreviewGrid
+      v-if="allPhotos && allPhotos.length"
+      :photos="allPhotos"
+    />
+    <p
+      v-else-if="allPhotos && allPhotos.length === 0"
+      class="home__empty-category"
+    >
       Don't have any photo collections yet
     </p>
     <Spiner v-else />
@@ -24,7 +30,8 @@ const { data } = usePhotosQuery();
 const allPhotos = computed(() => {
   const photos = data.value;
   const category = route.query.filter as string | undefined;
-  const byCat = (key: string) => photos?.filter((item) => item.categories?.includes(key));
+  const byCat = (key: string) =>
+    photos?.filter((item) => item.categories?.includes(key));
   const filtered = {
     all: photos,
     automotive: byCat("automotive"),
@@ -35,5 +42,7 @@ const allPhotos = computed(() => {
   return filtered[category as keyof typeof filtered] ?? photos;
 });
 
-onMounted(() => { setTitle("Portfolio"); });
+onMounted(() => {
+  setTitle("Portfolio");
+});
 </script>

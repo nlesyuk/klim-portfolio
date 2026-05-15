@@ -1,15 +1,28 @@
 <template>
   <section class="dashboard-shots">
-    <button type="button" class="dashboard__btn" @click="isShowAddShot = !isShowAddShot">Add shot</button>
+    <button
+      type="button"
+      class="dashboard__btn"
+      @click="isShowAddShot = !isShowAddShot"
+    >
+      Add shot
+    </button>
     <ShotAdd v-if="isShowAddShot" />
-    <ShotEdit v-if="isEdit" :shot="editedShot" :videos="videos" @close="closeEdit" />
-    <button type="button" @click="refresh" class="dashboard__btn">Refresh shots</button>
+    <ShotEdit
+      v-if="isEdit"
+      :shot="editedShot"
+      :videos="videos"
+      @close="closeEdit"
+    />
+    <button type="button" class="dashboard__btn" @click="refresh">
+      Refresh shots
+    </button>
     <PhotosGridShots
       v-if="sortedFilteredPhotos"
       :images="sortedFilteredPhotos"
-      :isManage="true"
-      @removeImg="remove"
-      @editImg="edit"
+      :is-manage="true"
+      @remove-img="remove"
+      @edit-img="edit"
     />
     <Spiner v-else />
   </section>
@@ -42,9 +55,13 @@ const sortedFilteredPhotos = computed(() => {
   return [...shots].sort((a, b) => b.id - a.id);
 });
 
-function refresh() { qc.invalidateQueries({ queryKey: queryKeys.shots() }); }
+function refresh() {
+  qc.invalidateQueries({ queryKey: queryKeys.shots() });
+}
 
-function remove(id: number) { deleteShot(id); }
+function remove(id: number) {
+  deleteShot(id);
+}
 
 function edit(id: number) {
   window.scroll({ top: 0, left: 0, behavior: "smooth" });
@@ -54,5 +71,7 @@ function edit(id: number) {
   editedShot.value = found?.length ? found[0] : undefined;
 }
 
-function closeEdit() { isEdit.value = false; }
+function closeEdit() {
+  isEdit.value = false;
+}
 </script>

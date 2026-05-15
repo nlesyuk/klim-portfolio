@@ -1,22 +1,29 @@
 <template>
   <section class="dashboard-slider">
-    <button class="dashboard__btn" @click="isShowAddSlide = !isShowAddSlide">Add slide</button>
+    <button class="dashboard__btn" @click="isShowAddSlide = !isShowAddSlide">
+      Add slide
+    </button>
     <SlideAdd
       v-if="isShowAddSlide"
-      :isEdit="isEdit"
+      :is-edit="isEdit"
       :slide="slide"
       :slides="slides"
       :works="videos"
       :photos="photos"
     />
-    <button type="button" @click="onRefresh" class="dashboard__btn">Refresh slides</button>
+    <button type="button" class="dashboard__btn" @click="onRefresh">
+      Refresh slides
+    </button>
     <Slides
       v-if="sortedSlides && sortedSlides.length"
       :slides="sortedSlides"
       @delete="onDelete"
       @edit="onEdit"
     />
-    <div v-else-if="sortedSlides && sortedSlides.length === 0" class="grid-empty">
+    <div
+      v-else-if="sortedSlides && sortedSlides.length === 0"
+      class="grid-empty"
+    >
       Don't have any items yet
     </div>
     <Spiner v-else />
@@ -55,9 +62,13 @@ const sortedSlides = computed(() => {
   return [...s].sort((a, b) => b.order - a.order);
 });
 
-function onRefresh() { qc.invalidateQueries({ queryKey: queryKeys.slides() }); }
+function onRefresh() {
+  qc.invalidateQueries({ queryKey: queryKeys.slides() });
+}
 
-function onDelete(id: number) { deleteSlide(id); }
+function onDelete(id: number) {
+  deleteSlide(id);
+}
 
 function onEdit(id: number) {
   isEdit.value = true;

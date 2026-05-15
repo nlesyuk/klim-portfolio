@@ -1,34 +1,89 @@
 <template>
   <section class="dashboard-photos">
-    <button type="button" @click="isShowAddPhoto = !isShowAddPhoto" class="dashboard__btn">Add photo</button>
-    <PhotoAdd v-if="isShowAddPhoto" :isEdit="isEdit" :photoCollection="photoCollection" />
-    <button type="button" @click="refresh" class="dashboard__btn">Refresh photos</button>
+    <button
+      type="button"
+      class="dashboard__btn"
+      @click="isShowAddPhoto = !isShowAddPhoto"
+    >
+      Add photo
+    </button>
+    <PhotoAdd
+      v-if="isShowAddPhoto"
+      :is-edit="isEdit"
+      :photo-collection="photoCollection"
+    />
+    <button type="button" class="dashboard__btn" @click="refresh">
+      Refresh photos
+    </button>
 
     <label v-if="isPhotographerMode" class="dashboard__checkbox">
-      <input type="checkbox" v-model="personal" />
+      <input v-model="personal" type="checkbox" />
       Personal({{ personal ? "on" : "off" }})
     </label>
 
-    <div class="dashboard-photos__container" v-if="!isPhotosEmpty">
+    <div v-if="!isPhotosEmpty" class="dashboard-photos__container">
       <PhotoPreview
         v-for="(item, idx) in photos"
         :key="idx"
         :collection="item"
-        :collectionType="idx % 2 ? 'left' : 'right'"
+        :collection-type="idx % 2 ? 'left' : 'right'"
       >
-        <ul class="dashboard__list" v-if="isManage">
-          <li><button type="button" class="dashboard__btn-inline" title="order" disabled>{{ item.order }}</button></li>
-          <li><button type="button" class="dashboard__btn-inline" @click.prevent="remove(item.id)">Remove</button></li>
-          <li><button type="button" class="dashboard__btn-inline" @click.prevent="edit(item.id)">Edit</button></li>
-          <li><button type="button" class="dashboard__btn-inline" title="id" disabled>id:{{ item.id }}</button></li>
+        <ul v-if="isManage" class="dashboard__list">
           <li>
-            <span class="dashboard__badge badge-blue" v-for="(category, index) in item.categories" :key="index">{{ category }}</span>
+            <button
+              type="button"
+              class="dashboard__btn-inline"
+              title="order"
+              disabled
+            >
+              {{ item.order }}
+            </button>
           </li>
-          <li class="dashboard__badge badge-green color-black">{{ getCategories(item.categories) }}</li>
+          <li>
+            <button
+              type="button"
+              class="dashboard__btn-inline"
+              @click.prevent="remove(item.id)"
+            >
+              Remove
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              class="dashboard__btn-inline"
+              @click.prevent="edit(item.id)"
+            >
+              Edit
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              class="dashboard__btn-inline"
+              title="id"
+              disabled
+            >
+              id:{{ item.id }}
+            </button>
+          </li>
+          <li>
+            <span
+              v-for="(category, index) in item.categories"
+              :key="index"
+              class="dashboard__badge badge-blue"
+              >{{ category }}</span
+            >
+          </li>
+          <li class="dashboard__badge badge-green color-black">
+            {{ getCategories(item.categories) }}
+          </li>
         </ul>
       </PhotoPreview>
     </div>
-    <div v-else-if="isPhotosEmpty" class="grid-empty">Don't have any items yet</div>
+    <div v-else-if="isPhotosEmpty" class="grid-empty">
+      Don't have any items yet
+    </div>
     <Spiner v-else />
   </section>
 </template>
@@ -59,7 +114,8 @@ const personal = ref(false);
 const allPhotos = computed(() => data.value);
 
 const photographerPhotos = computed(() => {
-  if (personal.value) return allPhotos.value?.filter((v) => v.categories?.includes("personal"));
+  if (personal.value)
+    return allPhotos.value?.filter((v) => v.categories?.includes("personal"));
   return allPhotos.value;
 });
 
@@ -72,11 +128,19 @@ const cinematographerPhotos = computed(() => {
   return [...sorted].sort((a, b) => b.order - a.order);
 });
 
-const photos = computed(() => isCinematographerMode ? cinematographerPhotos.value : photographerPhotos.value);
+const photos = computed(() =>
+  isCinematographerMode
+    ? cinematographerPhotos.value
+    : photographerPhotos.value,
+);
 const isPhotosEmpty = computed(() => !photos.value?.length);
 
-function remove(id: number) { deletePhoto(id); }
-function refresh() { qc.invalidateQueries({ queryKey: queryKeys.photos() }); }
+function remove(id: number) {
+  deletePhoto(id);
+}
+function refresh() {
+  qc.invalidateQueries({ queryKey: queryKeys.photos() });
+}
 function getCategories(arr: unknown) {
   if (Array.isArray(arr)) return arr.join(", ");
   return arr;

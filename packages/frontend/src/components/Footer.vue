@@ -1,7 +1,7 @@
 <template>
   <footer class="footer">
     <p class="footer__text">{{ description }}</p>
-    <p class="footer__text" v-if="contacts">
+    <p v-if="contacts" class="footer__text">
       contact me
       <a :href="`mailto:${contacts.email}`">{{ contacts.email }}</a>
     </p>
@@ -14,6 +14,8 @@ import { useContactsQuery } from "@/composables/useContacts";
 import { currentUser } from "@/helper/constants";
 
 const { data } = useContactsQuery();
-const contacts = computed(() => data.value as Record<string, string> | undefined);
+const contacts = computed(
+  () => data.value as Record<string, string> | undefined,
+);
 const description = currentUser?.footerDescription ?? "";
 </script>

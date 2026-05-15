@@ -21,11 +21,12 @@ instance.interceptors.request.use(
     (req.headers as Record<string, unknown>).domain = domain;
     const user = userStorageService.get<User>();
     if (user?.accessToken) {
-      (req.headers as Record<string, unknown>)["x-access-token"] = user.accessToken;
+      (req.headers as Record<string, unknown>)["x-access-token"] =
+        user.accessToken;
     }
     return req;
   },
-  (error: AxiosError) => Promise.reject(error)
+  (error: AxiosError) => Promise.reject(error),
 );
 
 instance.interceptors.response.use(
@@ -60,7 +61,7 @@ instance.interceptors.response.use(
     }
 
     return Promise.reject(err);
-  }
+  },
 );
 
 export default instance;

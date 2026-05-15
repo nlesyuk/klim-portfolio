@@ -35,6 +35,9 @@ export default {
   },
 };
 
-export function getRefreshToken(axios: AxiosInstance, refreshToken: string): Promise<AxiosResponse<RefreshResponse>> {
+export function getRefreshToken(
+  axios: AxiosInstance,
+  refreshToken: string,
+): Promise<AxiosResponse<RefreshResponse>> {
   return axios.post(`${resources}/refreshtoken`, { refreshToken });
 }

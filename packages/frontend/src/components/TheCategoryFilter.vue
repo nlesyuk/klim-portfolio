@@ -1,10 +1,10 @@
 <template>
   <nav class="categories">
     <button
-      class="categories__item"
-      :class="{ active: $route.query.filter === cat.toLowerCase() }"
       v-for="cat in categories"
       :key="cat"
+      class="categories__item"
+      :class="{ active: $route.query.filter === cat.toLowerCase() }"
       @click="router.push({ path: '/', query: { filter: cat.toLowerCase() } })"
     >
       {{ cat }}
@@ -37,13 +37,18 @@ const $route = useRoute();
     color: $grey;
     cursor: pointer;
     @include transition-default;
-    &:hover, &.active {
+    &:hover,
+    &.active {
       background-color: $accent;
       color: $primary;
       @include transition-default;
     }
-    &:first-child { border-radius: 4px 0 0 4px; }
-    &:last-child { border-radius: 0 4px 4px 0; }
+    &:first-child {
+      border-radius: 4px 0 0 4px;
+    }
+    &:last-child {
+      border-radius: 0 4px 4px 0;
+    }
   }
 }
 </style>
