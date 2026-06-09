@@ -1,4 +1,42 @@
-# klim-backend
+# klim-backend (v2 — Node 24 · ESM · TypeScript · Express 5 · Kysely)
+
+## Quickstart
+
+```bash
+cp .env.example .env          # fill DATABASE_URL + SECRET (12-factor)
+npm install                   # from repo root (workspaces)
+npm run dev    --workspace=packages/backend   # tsx watch
+npm run typecheck --workspace=packages/backend
+npm run test   --workspace=packages/backend   # vitest
+npm run build  --workspace=packages/backend   # tsc -> dist/
+npm run migrate --workspace=packages/backend up   # node-pg-migrate
+```
+
+Docker (whole stack — app + postgres + minio), from repo root:
+
+```bash
+docker compose up --build
+```
+
+## Stack & layout
+
+- **Config:** `src/env.ts` — Zod-validated, 12-factor (`DATABASE_URL`, `SECRET`,
+  `CORS_ALLOWED_ORIGINS`, `S3_*`). Replaces the old `IS_PROD` flag.
+- **DB:** Kysely over `pg` (`src/db/`). Hand-written `schema.ts`; regenerate with
+  `npm run db:codegen` once prod creds exist.
+- **Validation:** Zod schemas in `src/schemas/`; `validateBody` middleware.
+- **Storage:** `src/storage/` — S3-compatible (R2/MinIO) when `S3_*` set, else
+  local disk. Serves disk uploads via `/public/uploads/...`.
+- **Logging/errors:** pino + pino-http; single error sink in `src/middleware/error.ts`.
+- **Models:** shared with the FE via `@klim/shared` (`packages/shared`).
+- HTTP contract preserved: `/api/v1/{auth,work,contact,shot,photos,slider}` + `/health`.
+
+---
+
+## Legacy notes (pre-v2)
+
+> The section below describes the old JS/`IS_PROD` setup and is kept for reference.
+
 `> npm run dev`
 ```
 localhost:8090/

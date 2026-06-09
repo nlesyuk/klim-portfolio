@@ -1,15 +1,13 @@
 <template>
   <section class="dashboard">
-    <!--  -->
     <ul class="dashboard__menu">
-      <li v-for="item in $options.menu" :key="item">
-        <router-link
-          tag="button"
+      <li v-for="item in menuItems" :key="item">
+        <button
           class="dashboard__menu-item glass-button1"
-          :to="{ name: `dasboard-${item}` }"
+          @click="router.push({ name: `dasboard-${item}` })"
         >
           {{ item }}
-        </router-link>
+        </button>
       </li>
       <li>
         <button
@@ -32,52 +30,46 @@
         </button>
       </li>
     </ul>
-    <!--  -->
-    <router-view></router-view>
-    <!--  -->
+    <router-view />
     <h2
-      class="dashboard__title dashboard__title--center dashboard__title--big-border"
       v-if="isDashboardRoute"
+      class="dashboard__title dashboard__title--center dashboard__title--big-border"
     >
       Hello, {{ username }}!
     </h2>
   </section>
 </template>
 
-<script>
-import { mapActions } from "vuex";
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 import { menu } from "@/helper/constants";
 
-export default {
-  menu,
-  computed: {
-    isDashboardRoute() {
-      return this.$route.name === "dashboard";
-    },
-    currentUser() {
-      return this.$store.state.auth.user;
-    },
-    username() {
-      const name = this.currentUser?.username;
-      return name ? `${name}`.toUpperCase() : "Anonymous";
-    }
-  },
-  methods: {
-    ...mapActions("auth", ["logout"]),
-    async logoutFn() {
-      try {
-        await this.logout();
-        this.$router.push("/login");
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
-      }
-    }
-  },
-  mounted() {
-    if (!this.currentUser) {
-      this.$router.push("/login");
-    }
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+
+const menuItems = menu;
+
+const isDashboardRoute = computed(() => route.name === "dashboard");
+const username = computed(() => {
+  const name = (authStore.user as Record<string, unknown> | null)?.username as
+    | string
+    | undefined;
+  return name ? name.toUpperCase() : "Anonymous";
+});
+
+async function logoutFn() {
+  try {
+    await authStore.logout();
+    router.push("/login");
+  } catch (error) {
+    console.error(error);
   }
-};
+}
+
+onMounted(() => {
+  if (!authStore.user) router.push("/login");
+});
 </script>

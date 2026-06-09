@@ -14,16 +14,16 @@
         <label
           :class="[
             'dashboard__label',
-            { 'dashboard__label-error': $v.title.$dirty && $v.title.$error }
+            { 'dashboard__label-error': v$.title.$dirty && v$.title.$error },
           ]"
         >
           <span>Title</span>
-          <input type="text" v-model="slideFields.title" />
+          <input v-model="slideFields.title" type="text" />
           <strong
+            v-if="v$.title.$dirty && v$.title.$error"
             class="dashboard__label-error-info"
-            v-if="$v.title.$dirty && $v.title.$error"
           >
-            Min length is {{ $v.title.$params.minLength.min }}
+            Min length is 2
           </strong>
         </label>
 
@@ -31,9 +31,7 @@
         <label class="dashboard__label">
           <span>Order</span>
           <select v-model="slideFields.order">
-            <option disabled selected value="null">
-              Please choose order
-            </option>
+            <option disabled selected value="null">Please choose order</option>
             <option
               v-for="(item, index) of slidersLength"
               :key="index"
@@ -46,14 +44,12 @@
 
         <!-- Work -->
         <label class="dashboard__label">
-          <span>
-            Link slide to work
-            <b v-if="slideFields.workId === ''">- DISABLED</b>
-          </span>
+          <span
+            >Link slide to work
+            <b v-if="slideFields.workId === ''">- DISABLED</b></span
+          >
           <select v-model="slideFields.workId">
-            <option disabled selected value="null">
-              Please choose work
-            </option>
+            <option disabled selected value="null">Please choose work</option>
             <option
               v-for="(item, index) of preparedWorks"
               :key="index"
@@ -66,10 +62,10 @@
 
         <!-- Photo -->
         <label class="dashboard__label">
-          <span>
-            Link slide to photo collection
-            <b v-if="slideFields.photoId === ''">- DISABLED</b>
-          </span>
+          <span
+            >Link slide to photo collection
+            <b v-if="slideFields.photoId === ''">- DISABLED</b></span
+          >
           <select v-model="slideFields.photoId">
             <option disabled selected value="null">
               Please choose photo collection
@@ -89,20 +85,20 @@
           <span>Type of slide</span>
           <label class="dashboard__label mb0">
             <input
+              v-model="slideFields.type"
               type="radio"
               name="type"
               value="image"
-              v-model="slideFields.type"
               :disabled="isEdit"
             />
             <span class="inline">image</span>
           </label>
           <label class="dashboard__label">
             <input
+              v-model="slideFields.type"
               type="radio"
               name="type"
               value="video"
-              v-model="slideFields.type"
               :disabled="isEdit"
             />
             <span class="inline">video</span>
@@ -111,33 +107,17 @@
 
         <!-- IMG section -->
         <template v-if="slideFields.type === 'image'">
-          <!-- upload -->
           <div class="dashboard__label">
             <span>Upload photo</span>
-            <input type="file" @change="getFiles" ref="files" />
+            <input ref="filesInput" type="file" @change="getFiles" />
           </div>
-          <!-- EDIT -->
-          <div v-if="isEdit" class="dashboard__label">
+          <div class="dashboard__label">
             <ul class="dashboard__list-imgs">
               <li v-for="(file, idx) in slideFields.images" :key="idx">
                 <span class="dashboard__badge badge-yellow">{{ idx + 1 }}</span>
                 <button type="button" @click="removeSelectedImage(file.src)">
                   remove
                 </button>
-
-                <img class="mb16" :src="file.src" alt="add" />
-              </li>
-            </ul>
-          </div>
-          <!-- ADD -->
-          <div v-else class="dashboard__label">
-            <ul class="dashboard__list-imgs">
-              <li v-for="(file, idx) in slideFields.images" :key="idx">
-                <span class="dashboard__badge badge-yellow">{{ idx + 1 }}</span>
-                <button type="button" @click="removeSelectedImage(file.src)">
-                  remove
-                </button>
-
                 <img class="mb16" :src="file.src" alt="add" />
               </li>
             </ul>
@@ -148,8 +128,8 @@
           <label class="dashboard__label">
             <span>Vimeo video</span>
             <input
-              type="text"
               v-model="slideFields.videos.vimeoId"
+              type="text"
               placeholder="vimeo ID"
             />
           </label>
@@ -167,17 +147,17 @@
         <!-- btns -->
         <div class="dashboard__btns-container">
           <button
+            v-if="isEdit"
             type="submit"
             class="dashboard__submit"
-            v-if="isEdit"
             :disabled="isLoading"
           >
             Update
           </button>
           <button
+            v-else
             type="submit"
             class="dashboard__submit"
-            v-else
             :disabled="isLoading"
           >
             Add
@@ -185,32 +165,32 @@
           <button
             type="reset"
             class="dashboard__submit"
-            @click="reset"
             :disabled="isLoading"
+            @click="reset"
           >
             Reset
           </button>
-          <!-- server errors/response -->
           <div class="dashboard__status">
-            <div class="dashboard__status--success" v-if="isSuccess">
+            <div v-if="isSuccess" class="dashboard__status--success">
               Success
             </div>
-            <div class="dashboard__status--fail" v-if="serverError">
+            <div v-if="serverError" class="dashboard__status--fail">
               Server error: {{ serverError }}
             </div>
           </div>
-          <Spiner v-if="isLoading" :isCenter="false" />
+          <Spiner v-if="isLoading" :is-center="false" />
         </div>
       </div>
+
       <div class="dashboard__side dashboard__area-preview">
         <div class="dashboard-works-add__preview-cont">
           <template
             v-if="slideFields.type === 'image' && slideFields.images.length"
           >
             <img
-              class="dashboard__img"
               v-for="(item, index) in slideFields.images"
               :key="index"
+              class="dashboard__img"
               :src="item.src"
               alt="image"
             />
@@ -228,356 +208,293 @@
   </section>
 </template>
 
-<script>
-import { required, minLength } from "vuelidate/lib/validators";
-import VimeoVideoPlayer from "@/components/VimeoVideoPlayer";
-import { getHeightAndWidthFromDataUrl } from "../../helper/index";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
-const SlidesRepository = RepositoryFactory.get("slides");
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from "vue";
+import useVuelidate from "@vuelidate/core";
+import { required, minLength } from "@vuelidate/validators";
+import VimeoVideoPlayer from "@/components/VimeoVideoPlayer.vue";
+import Spiner from "@/components/Spiner.vue";
+import { getHeightAndWidthFromDataUrl } from "@/helper/index";
+import { useCreateSlide, useUpdateSlide } from "@/composables/useSlides";
+import type { Slide, Work, PhotoCollection } from "@/models";
 
-export default {
-  props: {
-    slide: {
-      type: Object
-    },
-    slides: {
-      type: Array,
-      default: () => []
-    },
-    works: {
-      type: Array,
-      default: () => []
-    },
-    photos: {
-      type: Array,
-      default: () => []
-    },
-    isEdit: {
-      type: Boolean
-    }
-  },
-  components: {
-    VimeoVideoPlayer
-  },
-  watch: {
-    slide() {
-      this.setDataForEdit();
-    }
-  },
-  data() {
-    return {
-      slideFields: {
-        id: null,
-        title: "title1",
-        order: null,
-        type: "image",
-        images: [],
-        videos: {
-          vimeoId: null
-        },
-        workId: null,
-        photoId: null
-      },
-      // general:
-      isLoading: false,
-      isSuccess: false,
-      clientErrors: [],
-      serverError: null,
-      disableValue: {
-        id: "",
-        title: "disable"
-      }
-    };
-  },
-  computed: {
-    title() {
-      return this.slideFields.title;
-    },
-    // base
-    slidersLength() {
-      const slides = this.slides;
-      if (!slides) {
-        return [0];
-      }
-      const arr = Array.from(slides);
-      return arr?.length ? Math.max(arr.length) + 1 : 1;
-    },
-    preparedWorks() {
-      const works = this.works;
-      const disableValue = this.disableValue;
-      return !works ? [disableValue] : [disableValue, ...works];
-    },
-    preparedPhotos() {
-      const photos = this.photos;
-      const disableValue = this.disableValue;
-      return !photos ? [disableValue] : [disableValue, ...photos];
-    }
-  },
-  validations: {
-    title: {
-      required,
-      minLength: minLength(2)
-    }
-  },
-  methods: {
-    reset() {
-      this.slideFields.title = "";
-      this.slideFields.order = null;
-      this.slideFields.type = "image";
-      this.slideFields.images = [];
-      this.slideFields.videos = {
-        vimeoId: null
-      };
+const { mutateAsync: createSlide } = useCreateSlide();
+const { mutateAsync: updateSlide } = useUpdateSlide();
 
-      this.$emit("resetForm");
-    },
-    getFiles() {
-      this.slideFields.images = [];
-      const files = this.$refs.files.files;
+const props = defineProps<{
+  slide?: Slide;
+  slides?: Slide[];
+  works?: Work[];
+  photos?: PhotoCollection[];
+  isEdit?: boolean;
+}>();
 
-      Array.from(files).forEach(file => {
-        getHeightAndWidthFromDataUrl(file).then(resolution => {
-          const format =
-            resolution.height > resolution.width ? "vertical" : "horizontal";
-          this.slideFields.images.push({
-            file,
-            format,
-            src: URL.createObjectURL(file)
-          });
-        });
+const emit = defineEmits<{
+  "work-create-successfully": [];
+  resetForm: [];
+}>();
+
+const filesInput = ref<HTMLInputElement | null>(null);
+const isLoading = ref(false);
+const isSuccess = ref(false);
+const clientErrors = ref<string[]>([]);
+const serverError = ref<string | null>(null);
+
+const slideFields = ref({
+  id: null as unknown,
+  title: "title1",
+  order: null as unknown,
+  type: "image",
+  images: [] as { src: string; file?: File; format?: string }[],
+  videos: { vimeoId: null as string | null },
+  workId: null as unknown,
+  photoId: null as unknown,
+});
+
+const disableValue = { id: "", title: "disable" };
+
+const title = computed(() => slideFields.value.title);
+const rules = { title: { required, minLength: minLength(2) } };
+const v$ = useVuelidate(rules, { title });
+
+const slidersLength = computed(() => {
+  const s = props.slides;
+  if (!s) return [0];
+  return Array.from({ length: Math.max(s.length) + 1 });
+});
+
+const preparedWorks = computed(() => {
+  const works = props.works;
+  return !works ? [disableValue] : [disableValue, ...works];
+});
+
+const preparedPhotos = computed(() => {
+  const photos = props.photos;
+  return !photos ? [disableValue] : [disableValue, ...photos];
+});
+
+watch(
+  () => props.slide,
+  () => {
+    if (props.isEdit) setDataForEdit();
+  },
+);
+
+function reset() {
+  slideFields.value.title = "";
+  slideFields.value.order = null;
+  slideFields.value.type = "image";
+  slideFields.value.images = [];
+  slideFields.value.videos = { vimeoId: null };
+  emit("resetForm");
+}
+
+function getFiles() {
+  slideFields.value.images = [];
+  const files = filesInput.value?.files;
+  if (!files) return;
+  Array.from(files).forEach((file) => {
+    getHeightAndWidthFromDataUrl(file).then((resolution) => {
+      const format =
+        resolution.height > resolution.width ? "vertical" : "horizontal";
+      slideFields.value.images.push({
+        file,
+        format,
+        src: URL.createObjectURL(file),
       });
-    },
-    removeSelectedImage(src) {
-      this.slideFields.images = this.slideFields.images.filter(
-        v => v.src != src
-      );
-    },
-    setOrder() {
-      if (this.isEdit) {
-        this.slideFields.order = this.slide.order;
-      }
-      if (this.slides) {
-        this.slideFields.order = Array.from(this.slides).length;
-      }
-    },
-    setServerStatusInUI(isSuccess, statusText) {
-      if (isSuccess) {
-        this.isSuccess = true;
-        setTimeout(() => {
-          this.isSuccess = false;
-          this.$emit("work-create-successfully");
-        }, 10 * 1000);
-        this.serverError = false;
-      } else {
-        this.serverError = statusText;
-        setTimeout(() => {
-          this.serverError = false;
-        }, 20 * 1000);
-      }
-    },
+    });
+  });
+}
 
-    // send work to a server:
-    async submit() {
-      this.clientErrors = [];
-      if (this.$v.$invalid) {
-        this.$v.$touch();
-        return;
-      }
+function removeSelectedImage(src: string) {
+  slideFields.value.images = slideFields.value.images.filter(
+    (v) => v.src !== src,
+  );
+}
 
-      const { order, type, videos, images, workId, photoId } = this.slideFields;
-      const isImage = type == "image";
-      if (type == "image") {
-        if (!Array.from(images).length) {
-          this.clientErrors.push("Please select at least one image");
-          return;
-        }
-      } else if (type == "video") {
-        if (!videos.vimeoId) {
-          this.clientErrors.push("Please provide vimeo video ID");
-          return;
-        }
-      } else {
-        this.clientErrors.push("Something went wrong");
-        return;
-      }
-
-      if (order == null || !Number.isInteger(+order)) {
-        this.clientErrors.push(
-          `Please fill up the order field, now is ${order}`
-        );
-        return;
-      }
-
-      if (!workId && !photoId) {
-        this.clientErrors.push("Please fill work or photo ID field");
-        return;
-      }
-
-      // if (!workId) {
-      //   this.clientErrors.push("Please fill work ID field");
-      //   return;
-      // }
-      // if (!photoId) {
-      //   this.clientErrors.push("Please fill photo ID field");
-      //   return;
-      // }
-
-      if (this.isEdit) {
-        this.update(isImage);
-      } else {
-        this.create(isImage);
-      }
-    },
-
-    // create
-    create(isImage) {
-      try {
-        const {
-          title,
-          order,
-          type,
-          videos,
-          images,
-          workId,
-          photoId
-        } = this.slideFields;
-
-        const formData = new FormData();
-        formData.append("type", type);
-        formData.append("title", title);
-        formData.append("order", order);
-        if (workId || workId === "") {
-          formData.append("workId", workId);
-        }
-        if (photoId || photoId === "") {
-          formData.append("photoId", photoId);
-        }
-
-        if (isImage) {
-          for (const photo of images) {
-            formData.append("photos[]", photo.file);
-          }
-        } else {
-          formData.append("videos", JSON.stringify(videos));
-        }
-
-        this.isLoading = true;
-        SlidesRepository.create(formData)
-          .then(() => {
-            this.reset();
-            this.setServerStatusInUI(true);
-          })
-          .catch(e => {
-            // eslint-disable-next-line no-console
-            console.error(e);
-            this.setServerStatusInUI(false, e?.response?.data?.message);
-          })
-          .finally(() => {
-            this.isLoading = false;
-            this.clientErrors = [];
-          });
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("AddSlide ERROR", err);
-      }
-    },
-
-    // edit
-    setDataForEdit() {
-      const {
-        id,
-        title,
-        order,
-        type,
-        image,
-        videos,
-        workId,
-        photoId
-      } = this.slide;
-
-      this.slideFields.id = id;
-      this.slideFields.type = type;
-      this.slideFields.title = title;
-      this.slideFields.order = order;
-      this.slideFields.images = [
-        {
-          src: image
-        }
-      ];
-      if (videos) {
-        this.slideFields.videos =
-          typeof videos === "string" ? JSON.parse(videos) : videos;
-      } else {
-        this.slideFields.videos = {
-          vimeoId: null
-        };
-      }
-      this.slideFields.workId = workId;
-      this.slideFields.photoId = photoId;
-    },
-    update(isImage) {
-      try {
-        const {
-          id,
-          title,
-          order,
-          type,
-          videos,
-          images,
-          workId,
-          photoId
-        } = this.slideFields;
-
-        const formData = new FormData();
-        formData.append("id", id);
-        formData.append("type", type);
-        formData.append("title", title);
-        formData.append("order", order);
-        if (workId) {
-          formData.append("workId", workId);
-        }
-        if (photoId) {
-          formData.append("photoId", photoId);
-        }
-
-        const image = images?.[0];
-        if (isImage) {
-          if (image?.src?.includes("blob")) {
-            formData.append("photos[]", image.file);
-          }
-        } else {
-          formData.append("videos", JSON.stringify(videos));
-        }
-
-        this.isLoading = true;
-        SlidesRepository.update(formData)
-          .then(() => {
-            this.reset();
-            this.setServerStatusInUI(true);
-          })
-          .catch(e => {
-            // eslint-disable-next-line no-console
-            console.error(e);
-            this.setServerStatusInUI(false, e?.response?.data?.message);
-          })
-          .finally(() => {
-            this.isLoading = false;
-            this.clientErrors = [];
-          });
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error("AddSlide ERROR", err);
-      }
-    },
-    getName(file) {
-      return `${file.src}`.split("/").pop();
-    }
-  },
-  mounted() {
-    if (this.isEdit) {
-      this.setDataForEdit();
-    }
-    this.setOrder();
+function setOrder() {
+  if (props.isEdit && props.slide) {
+    slideFields.value.order = props.slide.order;
+  } else if (props.slides) {
+    slideFields.value.order = Array.from(props.slides).length;
   }
-};
+}
+
+function setServerStatusInUI(isOk: boolean, statusText?: string) {
+  if (isOk) {
+    isSuccess.value = true;
+    setTimeout(() => {
+      isSuccess.value = false;
+      emit("work-create-successfully");
+    }, 10_000);
+    serverError.value = null;
+  } else {
+    serverError.value = statusText ?? null;
+    setTimeout(() => {
+      serverError.value = null;
+    }, 20_000);
+  }
+}
+
+async function submit() {
+  clientErrors.value = [];
+  v$.value.$touch();
+  if (v$.value.$invalid) return;
+
+  const { order, type, videos, images, workId, photoId } = slideFields.value;
+  const isImage = type === "image";
+
+  if (isImage) {
+    if (!images.length) {
+      clientErrors.value.push("Please select at least one image");
+      return;
+    }
+  } else if (type === "video") {
+    if (!videos.vimeoId) {
+      clientErrors.value.push("Please provide vimeo video ID");
+      return;
+    }
+  } else {
+    clientErrors.value.push("Something went wrong");
+    return;
+  }
+
+  if (order == null || !Number.isInteger(+String(order))) {
+    clientErrors.value.push(`Please fill up the order field, now is ${order}`);
+    return;
+  }
+  if (!workId && !photoId) {
+    clientErrors.value.push("Please fill work or photo ID field");
+    return;
+  }
+
+  if (props.isEdit) {
+    update(isImage);
+  } else {
+    create(isImage);
+  }
+}
+
+function create(isImage: boolean) {
+  try {
+    const {
+      title: t,
+      order,
+      type,
+      videos,
+      images,
+      workId,
+      photoId,
+    } = slideFields.value;
+    const formData = new FormData();
+    formData.append("type", type);
+    formData.append("title", t);
+    formData.append("order", String(order));
+    if (workId || workId === "") formData.append("workId", String(workId));
+    if (photoId || photoId === "") formData.append("photoId", String(photoId));
+
+    if (isImage) {
+      for (const photo of images) {
+        if (photo.file) formData.append("photos[]", photo.file);
+      }
+    } else {
+      formData.append("videos", JSON.stringify(videos));
+    }
+
+    isLoading.value = true;
+    createSlide(formData)
+      .then(() => {
+        reset();
+        setServerStatusInUI(true);
+      })
+      .catch((e: unknown) => {
+        console.error(e);
+        setServerStatusInUI(
+          false,
+          (e as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message,
+        );
+      })
+      .finally(() => {
+        isLoading.value = false;
+        clientErrors.value = [];
+      });
+  } catch (err) {
+    console.error("AddSlide ERROR", err);
+  }
+}
+
+function setDataForEdit() {
+  const s = props.slide;
+  if (!s) return;
+  const { id, title: t, order, type, image, videos, workId, photoId } = s;
+  slideFields.value.id = id;
+  slideFields.value.type = type as string;
+  slideFields.value.title = t as string;
+  slideFields.value.order = order;
+  slideFields.value.images = [{ src: image as string }];
+  slideFields.value.videos = videos
+    ? typeof videos === "string"
+      ? JSON.parse(videos)
+      : { ...(videos as object) }
+    : { vimeoId: null };
+  slideFields.value.workId = workId;
+  slideFields.value.photoId = photoId;
+}
+
+function update(isImage: boolean) {
+  try {
+    const {
+      id,
+      title: t,
+      order,
+      type,
+      videos,
+      images,
+      workId,
+      photoId,
+    } = slideFields.value;
+    const formData = new FormData();
+    formData.append("id", String(id));
+    formData.append("type", type);
+    formData.append("title", t);
+    formData.append("order", String(order));
+    if (workId) formData.append("workId", String(workId));
+    if (photoId) formData.append("photoId", String(photoId));
+
+    const image = images?.[0];
+    if (isImage) {
+      if (image?.src?.includes("blob") && image.file)
+        formData.append("photos[]", image.file);
+    } else {
+      formData.append("videos", JSON.stringify(videos));
+    }
+
+    isLoading.value = true;
+    updateSlide(formData)
+      .then(() => {
+        reset();
+        setServerStatusInUI(true);
+      })
+      .catch((e: unknown) => {
+        console.error(e);
+        setServerStatusInUI(
+          false,
+          (e as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message,
+        );
+      })
+      .finally(() => {
+        isLoading.value = false;
+        clientErrors.value = [];
+      });
+  } catch (err) {
+    console.error("AddSlide ERROR", err);
+  }
+}
+
+onMounted(() => {
+  if (props.isEdit) setDataForEdit();
+  setOrder();
+});
 </script>

@@ -1,98 +1,94 @@
 <template>
   <div class="work-page">
     <Spiner v-if="isLoading" />
-
     <template v-if="work">
-      <VimeoVideoPlayer :id="work.videos.vimeoId" :previewImg="previewImg" />
+      <VimeoVideoPlayer
+        :id="work.videos?.vimeoId ?? ''"
+        :preview-img="previewImg ?? undefined"
+      />
       <h1 class="work-page__title">{{ work.title }}</h1>
       <p class="work-page__description" v-html="work.description"></p>
       <PhotosGrid
         v-show="work.photos"
-        :images="work.photos"
-        :isWorks="isPreview"
+        :images="work.photos ?? []"
+        :is-works="isPreview"
       />
       <p class="work-page__credits" v-html="work.credits"></p>
     </template>
     <h2 v-else-if="!error && !work && !isLoading" class="something-went-wrong">
       Something went wrong :()
     </h2>
-
     <Error
       v-if="error"
-      :statusCode="error.status"
+      :status-code="error.status"
       :message="error.statusText"
     />
   </div>
 </template>
 
-<script>
-import PhotosGrid from "../components/PhotosGrid";
-import VimeoVideoPlayer from "../components/VimeoVideoPlayer";
-import { RepositoryFactory } from "./../repositories/RepositoryFactory";
-const VideosRepository = RepositoryFactory.get("videos");
-import { setTitle, handlerServerErrors } from "../helper/index";
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import { useQuery } from "@tanstack/vue-query";
+import PhotosGrid from "@/components/PhotosGrid.vue";
+import VimeoVideoPlayer from "@/components/VimeoVideoPlayer.vue";
+import Spiner from "@/components/Spiner.vue";
+import Error from "@/views/Error.vue";
+import { queryKeys } from "@/queries/keys";
+import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import { setTitle, handlerServerErrors } from "@/helper/index";
+import type { Work } from "@/models";
 
-export default {
-  name: "Work",
-  props: {
-    previewWork: {
-      type: Object
-    },
-    isPreview: {
-      type: Boolean,
-      default: false
-    }
-  },
-  watch: {
-    previewWork(v) {
-      this.work = v;
-    }
-  },
-  components: {
-    PhotosGrid,
-    VimeoVideoPlayer
-  },
-  data() {
-    return {
-      work: null,
-      error: null,
-      isLoading: false
-    };
-  },
-  computed: {
-    previewImg() {
-      if (!this.work) {
-        return null;
-      }
-      if (this.isPreview) {
-        const res = this.work?.photos
-          ? this.work.photos.filter(img => img.isPreview)
-          : [];
-        return res.length ? res[0].src : "";
-      }
-      const res = this.work.photos.filter(img => img.isPreview);
-      return res.length ? res[0].src : null;
-    }
-  },
-  async mounted() {
-    setTitle("Work");
+const VideosRepo = RepositoryFactory.get("videos");
+const route = useRoute();
 
-    if (this.isPreview) {
-      this.work = this.previewWork;
-      return;
-    }
+const props = withDefaults(
+  defineProps<{ previewWork?: Partial<Work>; isPreview?: boolean }>(),
+  { isPreview: false },
+);
 
-    try {
-      this.isLoading = true;
-      const { data } = await VideosRepository.getVideo(this.$route.params.id);
-      this.work = data;
-    } catch (e) {
-      // eslint-disable-next-line
-      console.error(e);
-      this.error = handlerServerErrors(e);
-    } finally {
-      this.isLoading = false;
-    }
+const work = ref<Partial<Work> | undefined>(undefined);
+const error = ref<{ status: number; statusText: string } | null>(null);
+
+const videoId = computed(() => route.params.id);
+
+const {
+  data: fetchedWork,
+  isPending,
+  error: queryError,
+} = useQuery<Work>({
+  queryKey: computed(() => [...queryKeys.videos(), videoId.value]),
+  queryFn: () => VideosRepo.getVideo(videoId.value).then((r) => r.data),
+  enabled: computed(() => !props.isPreview && !!videoId.value),
+});
+
+const isLoading = computed(() => !props.isPreview && isPending.value);
+
+watch(fetchedWork, (v) => {
+  if (v) work.value = v;
+});
+watch(queryError, (e) => {
+  if (e) error.value = handlerServerErrors(e);
+});
+
+const previewImg = computed(() => {
+  if (!work.value) return null;
+  const previews = work.value.photos?.filter((img) => img.isPreview) ?? [];
+  if (props.isPreview) return previews.length ? previews[0].src : "";
+  return previews.length ? previews[0].src : null;
+});
+
+watch(
+  () => props.previewWork,
+  (v) => {
+    if (v) work.value = v;
+  },
+);
+
+onMounted(() => {
+  setTitle("Work");
+  if (props.isPreview) {
+    work.value = props.previewWork;
   }
-};
+});
 </script>

@@ -7,7 +7,7 @@ const config = [
     isPhotographer: false,
     footerDescription:
       "Klim Stepan. Ukraine based cinematogapher / director of photography",
-    theme: "dark"
+    theme: "dark",
   },
   {
     domain: "derzhanovska.com",
@@ -15,22 +15,24 @@ const config = [
     isCinematographer: false,
     isPhotographer: true,
     footerDescription: "Anna Derzhanovska / Photographer",
-    theme: "light"
-  }
+    theme: "light",
+  },
 ];
 
-export const domain: string = process.env.VUE_APP_DOMAIN || "klimstepan.com";
-export const author: string | undefined = config.find(v => v.domain === domain)
-  ?.author;
+export const domain: string = import.meta.env.VITE_DOMAIN || "klimstepan.com";
+export const author: string | undefined = config.find(
+  (v) => v.domain === domain,
+)?.author;
 export const isCinematographerMode: boolean = domain === "klimstepan.com";
 export const isPhotographerMode: boolean = domain === "derzhanovska.com";
-export const currentUser = config.find(v => v.domain === domain);
+export const currentUser = config.find((v) => v.domain === domain);
 export const themes = ["light", "dark"];
+
 // server
 export const serverDomain: string =
-  process.env.VUE_APP_SERVER_ENVIRONMENT === "prod"
-    ? process.env.VUE_APP_SERVER_PRODUCTION
-    : process.env.VUE_APP_SERVER_DEV;
+  import.meta.env.VITE_SERVER_ENVIRONMENT === "prod"
+    ? import.meta.env.VITE_SERVER_PRODUCTION
+    : import.meta.env.VITE_SERVER_DEV;
 export const apiVersion = `api/v1`;
 export const APIURL = `${serverDomain}/${apiVersion}`;
 
@@ -40,20 +42,19 @@ const mainMenu = [
   { name: "works", isSinematographer: true, isPhotographer: false },
   { name: "shots", isSinematographer: true, isPhotographer: false },
   { name: "photos", isSinematographer: true, isPhotographer: true },
-  { name: "contacts", isSinematographer: true, isPhotographer: true }
+  { name: "contacts", isSinematographer: true, isPhotographer: true },
 ];
 
 export const menuSinematographer = mainMenu
-  .filter(v => v.isSinematographer)
-  .map(v => v.name);
-
+  .filter((v) => v.isSinematographer)
+  .map((v) => v.name);
 export const menuPhotographer = mainMenu
-  .filter(v => v.isPhotographer)
-  .map(v => v.name);
-
+  .filter((v) => v.isPhotographer)
+  .map((v) => v.name);
 export const menu = isCinematographerMode
   ? menuSinematographer
   : menuPhotographer;
+
 // Stepan
 export const cinematographerCategories = [
   "all",
@@ -62,7 +63,7 @@ export const cinematographerCategories = [
   "fashion",
   "lifestyle",
   "personal",
-  "commerce"
+  "commerce",
 ];
 // Anna
 export const photographerCategories = [
@@ -70,11 +71,10 @@ export const photographerCategories = [
   "automotive",
   "fashion",
   "architecture and interior",
-  "personal"
+  "personal",
 ];
 
 export const categories = isCinematographerMode
   ? cinematographerCategories
   : photographerCategories;
-
 export const allowedImageSizeInKb = 1560;

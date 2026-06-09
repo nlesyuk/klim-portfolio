@@ -5,7 +5,7 @@
         v-for="(photo, idx) in allPhotos"
         :key="idx"
         :collection="photo"
-        :collectionType="idx % 2 ? 'left' : 'right'"
+        :collection-type="idx % 2 ? 'left' : 'right'"
       />
     </template>
     <p
@@ -18,41 +18,27 @@
   </div>
 </template>
 
-<script>
-import PhotoPreview from "../components/PhotoPreview";
-import { mapActions, mapState } from "vuex";
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import PhotoPreview from "@/components/PhotoPreview.vue";
+import Spiner from "@/components/Spiner.vue";
+import { usePhotosQuery } from "@/composables/usePhotos";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotoPreview
-  },
-  computed: {
-    ...mapState({
-      photos: state => state.photos.photos
-    }),
-    allPhotos() {
-      const category = this.$route?.query?.filter;
-      if (category === "all" || !category) {
-        return this.photos;
-      }
+const route = useRoute();
+const { data } = usePhotosQuery();
 
-      const filtered = this.photos?.filter(item =>
-        item?.categories?.includes(category)
-      );
+const allPhotos = computed(() => {
+  const photos = data.value;
+  const category = route.query.filter as string | undefined;
+  if (category === "all" || !category) return photos;
+  return (
+    photos?.filter((item) => item.categories?.includes(category)) ?? photos
+  );
+});
 
-      return filtered || this.photos;
-    }
-  },
-  methods: {
-    ...mapActions(["getPhotos"])
-  },
-  mounted() {
-    setTitle("Portfolio");
-
-    if (!this.photos) {
-      this.getPhotos();
-    }
-  }
-};
+onMounted(() => {
+  setTitle("Portfolio");
+});
 </script>

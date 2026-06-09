@@ -7,22 +7,20 @@
       v-if="isShowAddWork"
       :work="work"
       :works="videos"
-      :isEdit="isEdit"
-      @resetForm="isEdit = false"
-      @workCreateSuccessfully="refresh"
-    ></WorkAdd>
-
-    <button type="button" @click="refresh" class="dashboard__btn">
+      :is-edit="isEdit"
+      @reset-form="isEdit = false"
+      @work-create-successfully="refresh"
+    />
+    <button type="button" class="dashboard__btn" @click="refresh">
       Refresh works
     </button>
-
     <WorksGrid
       v-if="videos && videos.length"
       :works="videos"
-      :isAdmin="true"
+      :is-admin="true"
       @delete="onDelete"
       @edit="onEdit"
-    ></WorksGrid>
+    />
     <div v-else-if="videos && videos.length === 0" class="grid-empty">
       Don't have any items yet
     </div>
@@ -30,49 +28,38 @@
   </section>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { useQueryClient } from "@tanstack/vue-query";
 import WorkAdd from "./WorkAdd.vue";
-import WorksGrid from "../../components/WorksGrid.vue";
-import { mapState, mapActions } from "vuex";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
-const VideosRepository = RepositoryFactory.get("videos");
+import WorksGrid from "@/components/WorksGrid.vue";
+import Spiner from "@/components/Spiner.vue";
+import { useVideosQuery, useDeleteVideo } from "@/composables/useVideos";
+import { queryKeys } from "@/queries/keys";
+import type { Work } from "@/models";
 
-export default {
-  components: {
-    WorkAdd,
-    WorksGrid
-  },
-  data() {
-    return {
-      work: null,
-      isEdit: false,
-      isShowAddWork: false
-    };
-  },
-  computed: {
-    ...mapState({
-      videos: state => state.videos.videos
-    })
-  },
-  methods: {
-    ...mapActions(["getAllVideos"]),
-    refresh() {
-      this.getAllVideos();
-    },
-    onEdit(id) {
-      this.isEdit = true;
-      const item = this.videos.filter(v => v.id === id);
-      this.work = item?.length ? item[0] : null;
-      this.isShowAddWork = true; // we use the addWork form for edit a work
-    },
-    onDelete(id) {
-      VideosRepository.delete(id);
-    }
-  },
-  created() {
-    if (!this.videos) {
-      this.getAllVideos();
-    }
-  }
-};
+const qc = useQueryClient();
+const { data } = useVideosQuery();
+const { mutate: deleteVideo } = useDeleteVideo();
+
+const work = ref<Work | undefined>(undefined);
+const isEdit = ref(false);
+const isShowAddWork = ref(false);
+
+const videos = computed(() => data.value);
+
+function refresh() {
+  qc.invalidateQueries({ queryKey: queryKeys.videos() });
+}
+
+function onEdit(id: number) {
+  isEdit.value = true;
+  const item = data.value?.filter((v) => v.id === id);
+  work.value = item?.length ? item[0] : undefined;
+  isShowAddWork.value = true;
+}
+
+function onDelete(id: number) {
+  deleteVideo(id);
+}
 </script>

@@ -6,72 +6,68 @@
     >
       <!-- BASE FIELDS -->
       <div class="dashboard__form-item">
-        <!--  -->
         <label
           :class="[
             'dashboard__label',
-            { 'dashboard__label-error': $v.email.$dirty && $v.email.$error }
+            { 'dashboard__label-error': v$.email.$dirty && v$.email.$error },
           ]"
         >
           <span>email</span>
-          <input type="email" v-model="email" />
+          <input v-model="email" type="email" />
         </label>
-        <!--  -->
         <label
           :class="[
             'dashboard__label',
-            { 'dashboard__label-error': $v.phone.$dirty && $v.phone.$error }
+            { 'dashboard__label-error': v$.phone.$dirty && v$.phone.$error },
           ]"
         >
           <span>phone</span>
-          <input type="text" v-model="phone" />
+          <input v-model="phone" type="text" />
         </label>
-        <!--  -->
         <label
           :class="[
             'dashboard__label',
-            { 'dashboard__label-error': $v.vimeo.$dirty && $v.vimeo.$error }
+            { 'dashboard__label-error': v$.vimeo.$dirty && v$.vimeo.$error },
           ]"
         >
           <span>vimeo</span>
-          <input type="text" v-model="vimeo" />
+          <input v-model="vimeo" type="text" />
         </label>
-        <!--  -->
-        <label
-          :class="[
-            'dashboard__label',
-            {
-              'dashboard__label-error': $v.facebook.$dirty && $v.facebook.$error
-            }
-          ]"
-        >
-          <span>facebook</span>
-          <input type="text" v-model="facebook" />
-        </label>
-        <!--  -->
-        <label
-          :class="[
-            'dashboard__label',
-            {
-              'dashboard__label-error': $v.telegram.$dirty && $v.telegram.$error
-            }
-          ]"
-        >
-          <span>telegram</span>
-          <input type="text" v-model="telegram" />
-        </label>
-        <!--  -->
         <label
           :class="[
             'dashboard__label',
             {
               'dashboard__label-error':
-                $v.instagram.$dirty && $v.instagram.$error
-            }
+                v$.facebook.$dirty && v$.facebook.$error,
+            },
+          ]"
+        >
+          <span>facebook</span>
+          <input v-model="facebook" type="text" />
+        </label>
+        <label
+          :class="[
+            'dashboard__label',
+            {
+              'dashboard__label-error':
+                v$.telegram.$dirty && v$.telegram.$error,
+            },
+          ]"
+        >
+          <span>telegram</span>
+          <input v-model="telegram" type="text" />
+        </label>
+        <label
+          :class="[
+            'dashboard__label',
+            {
+              'dashboard__label-error':
+                v$.instagram.$dirty && v$.instagram.$error,
+            },
           ]"
         >
           <span>instagram</span>
-          <input type="text" v-model="instagram" />
+          <input v-model="instagram" type="text" />
         </label>
       </div>
 
@@ -79,30 +75,20 @@
       <div class="dashboard__form-item">
         <label class="dashboard__label">
           <span>Description</span>
-          <VueEditor
-            class="vue2editor"
-            v-model="description"
-            placeholder="description"
-          ></VueEditor>
+          <RichEditor v-model="description" placeholder="description" />
         </label>
-
-        <ThemeToggle :currentTheme="theme" @onThemeChange="setTheme" />
+        <ThemeToggle :current-theme="theme" @on-theme-change="setTheme" />
       </div>
 
       <!-- PHOTO -->
       <div class="dashboard__form-item">
-        <!-- upload work -->
         <div class="dashboard__label">
           <span>Upload photo</span>
-          <input type="file" multiple @change="getFiles" ref="files" />
+          <input ref="filesInput" type="file" multiple @change="getFiles" />
         </div>
-        <!-- files: edit -->
         <ul class="dashboard__list-imgs dashboard__list-imgs--single">
           <li v-for="(file, idx) in selectedImages" :key="idx">
             <span class="dashboard__badge badge-yellow">{{ idx + 1 }}</span>
-            <!-- <button type="button" @click="selectedImages = []">
-              delete
-            </button> -->
             <span>{{ getName(file) }}</span>
             <img :src="file.src" alt="edit" />
           </li>
@@ -121,213 +107,160 @@
         <button type="reset" class="dashboard__submit" @click="reset">
           Reset
         </button>
-        <!-- server errors/response -->
         <div class="dashboard__status">
-          <div class="dashboard__status--success" v-if="isSuccess">
-            Success
-          </div>
-          <div class="dashboard__status--fail" v-if="serverError">
+          <div v-if="isSuccess" class="dashboard__status--success">Success</div>
+          <div v-if="serverError" class="dashboard__status--fail">
             Server error: {{ serverError }}
           </div>
         </div>
-        <Spiner v-if="isLoading" :isCenter="false" />
+        <Spiner v-if="isLoading" :is-center="false" />
       </div>
     </form>
   </section>
 </template>
 
-<script>
-import { getHeightAndWidthFromDataUrl, getName } from "../../helper/index";
-import { VueEditor } from "vue2-editor";
-import { required } from "vuelidate/lib/validators";
-import { mapState, mapActions } from "vuex";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
-const GeneralRepository = RepositoryFactory.get("general");
-import ThemeToggle from "./ThemeToggle.vue";
+<script setup lang="ts">
+import { ref, watch, onMounted } from "vue";
+import useVuelidate from "@vuelidate/core";
+import { required } from "@vuelidate/validators";
+import {
+  useContactsQuery,
+  useCreateContacts,
+  useUpdateContacts,
+} from "@/composables/useContacts";
 import { themeInstance } from "@/helper";
+import RichEditor from "@/components/RichEditor.vue";
+import ThemeToggle from "./ThemeToggle.vue";
+import Spiner from "@/components/Spiner.vue";
 
-export default {
-  data() {
-    return {
-      // fields
-      email: null,
-      phone: null,
-      vimeo: null,
-      facebook: null,
-      telegram: null,
-      instagram: null,
-      description: null,
-      selectedImages: [],
-      theme: null,
-      // general
-      isContactAlreadyExist: false,
-      isLoading: false,
-      isSuccess: false,
-      clientErrors: [],
-      serverError: null
-    };
-  },
-  validations: {
-    email: {
-      required
-    },
-    phone: {
-      required
-    },
-    vimeo: {
-      // required
-    },
-    facebook: {
-      // required
-    },
-    telegram: {
-      // required
-    },
-    instagram: {
-      // required
-    }
-  },
-  components: {
-    VueEditor,
-    ThemeToggle
-  },
-  watch: {
-    contacts: {
-      deep: true,
-      immediate: true,
-      handler(v) {
-        console.log(v);
-      }
-    }
-  },
-  computed: {
-    ...mapState({
-      contacts: state => state.general.contacts
-    }),
-    isDataTheSame() {
-      return true;
-    },
-    // base
-    worksLength() {
-      if (!this.works) {
-        return [];
-      }
-      const arr = Array.from(this.works).map(v => v.order);
-      return arr?.length
-        ? Math.max(...arr) + 2 // 2 bacause we start counting from 0 and need +1 and then +1 again
-        : 1;
-    }
-  },
-  methods: {
-    // base
-    ...mapActions(["getContacts"]),
-    getFiles() {
-      this.selectedImages = [];
-      const files = this.$refs.files.files;
+const { data: contactsData } = useContactsQuery();
+const { mutate: createContacts, isPending: isCreating } = useCreateContacts();
+const { mutate: updateContacts, isPending: isUpdating } = useUpdateContacts();
 
-      Array.from(files).forEach((file, idx) => {
-        getHeightAndWidthFromDataUrl(file).then(resolution => {
-          const format =
-            resolution.height > resolution.width ? "vertical" : "horizontal";
-          this.selectedImages.push({
-            file,
-            order: idx,
-            isPreview: false,
-            format,
-            src: URL.createObjectURL(file)
-          });
-        });
-      });
-    },
-    reset() {
-      this.email = null;
-      this.phone = null;
-      this.vimeo = null;
-      this.theme = null;
-      this.facebook = null;
-      this.telegram = null;
-      this.instagram = null;
-      this.description = null;
-      this.selectedImages = [];
-    },
-    setContacts(contacts) {
-      if (!contacts) {
-        return false;
-      }
+const filesInput = ref<HTMLInputElement | null>(null);
 
-      const {
-        email,
-        phone,
-        vimeo,
-        theme,
-        facebook,
-        telegram,
-        instagram,
-        description,
-        image
-      } = contacts;
+const email = ref<string | null>(null);
+const phone = ref<string | null>(null);
+const vimeo = ref<string | null>(null);
+const facebook = ref<string | null>(null);
+const telegram = ref<string | null>(null);
+const instagram = ref<string | null>(null);
+const description = ref<string>("");
+const selectedImages = ref<{ src: string; file?: File }[]>([]);
+const theme = ref<string | undefined>(undefined);
 
-      this.email = email;
-      this.phone = phone;
-      this.vimeo = vimeo;
-      this.theme = theme;
-      this.facebook = facebook;
-      this.telegram = telegram;
-      this.instagram = instagram;
-      this.description = description ?? "";
-      this.selectedImages.push({ src: image });
-      this.isContactAlreadyExist = true;
-    },
-    getName: getName,
-    setTheme(theme) {
-      this.theme = theme;
-      themeInstance.setNewTheme(theme);
-    },
+const isContactAlreadyExist = ref(false);
+const isLoading = ref(false);
+const isSuccess = ref(false);
+const serverError = ref<string | null>(null);
 
-    // submit
-    submit() {
-      if (this.$v.$invalid) {
-        this.$v.$touch();
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("email", this.email);
-      formData.append("phone", this.phone);
-      formData.append("vimeo", this.vimeo);
-      formData.append("theme", this.theme);
-      formData.append("telegram", this.telegram);
-      formData.append("facebook", this.facebook);
-      formData.append("instagram", this.instagram);
-      formData.append("description", this.description);
-      const image = this.selectedImages?.[0];
-      if (image) {
-        formData.append("photos[]", image.file);
-      }
-
-      this.isLoading = true;
-      if (this.isContactAlreadyExist) {
-        // update
-        GeneralRepository.updateContacts(formData).finally(() => {
-          this.isLoading = false;
-        });
-      } else {
-        // create
-        GeneralRepository.createContacts(formData).finally(() => {
-          this.isLoading = false;
-        });
-      }
-    }
-  },
-  created() {
-    this.$nextTick(() => {
-      if (!this.contacts) {
-        this.getContacts().then(contacts => {
-          this.setContacts(contacts);
-        });
-      }
-      this.setContacts(this.contacts);
-    });
-  }
+const rules = {
+  email: { required },
+  phone: { required },
+  vimeo: {},
+  facebook: {},
+  telegram: {},
+  instagram: {},
 };
+
+const v$ = useVuelidate(rules, {
+  email,
+  phone,
+  vimeo,
+  facebook,
+  telegram,
+  instagram,
+});
+
+const isDataTheSame = true;
+
+function setContacts(contacts: Record<string, unknown> | null | undefined) {
+  if (!contacts) return;
+  email.value = contacts.email as string;
+  phone.value = contacts.phone as string;
+  vimeo.value = contacts.vimeo as string;
+  theme.value = contacts.theme as string;
+  facebook.value = contacts.facebook as string;
+  telegram.value = contacts.telegram as string;
+  instagram.value = contacts.instagram as string;
+  description.value = (contacts.description as string) ?? "";
+  if (contacts.image)
+    selectedImages.value.push({ src: contacts.image as string });
+  isContactAlreadyExist.value = true;
+}
+
+function getName(file: { src: string }) {
+  return `${file.src}`.split("/").pop();
+}
+
+function getFiles() {
+  selectedImages.value = [];
+  const files = filesInput.value?.files;
+  if (!files) return;
+  Array.from(files).forEach((file) => {
+    selectedImages.value.push({ file, src: URL.createObjectURL(file) });
+  });
+}
+
+function reset() {
+  email.value = null;
+  phone.value = null;
+  vimeo.value = null;
+  theme.value = undefined;
+  facebook.value = null;
+  telegram.value = null;
+  instagram.value = null;
+  description.value = "";
+  selectedImages.value = [];
+}
+
+function setTheme(t: string) {
+  theme.value = t;
+  themeInstance.setNewTheme(t);
+}
+
+async function submit() {
+  v$.value.$touch();
+  if (v$.value.$invalid) return;
+
+  const formData = new FormData();
+  formData.append("email", email.value ?? "");
+  formData.append("phone", phone.value ?? "");
+  formData.append("vimeo", vimeo.value ?? "");
+  formData.append("theme", theme.value ?? "");
+  formData.append("telegram", telegram.value ?? "");
+  formData.append("facebook", facebook.value ?? "");
+  formData.append("instagram", instagram.value ?? "");
+  formData.append("description", description.value ?? "");
+  const image = selectedImages.value?.[0];
+  if (image?.file) formData.append("photos[]", image.file);
+
+  const onSettled = () => {
+    isSuccess.value = true;
+    setTimeout(() => {
+      isSuccess.value = false;
+    }, 10_000);
+  };
+  if (isContactAlreadyExist.value) {
+    updateContacts(formData, { onSettled });
+  } else {
+    createContacts(formData, { onSettled });
+  }
+}
+
+watch(
+  contactsData,
+  (c) => {
+    setContacts(c as Record<string, unknown> | undefined);
+  },
+  { immediate: true },
+);
+
+watch([isCreating, isUpdating], ([a, b]) => {
+  isLoading.value = a || b;
+});
+
+onMounted(() => {
+  setContacts(contactsData.value as Record<string, unknown> | undefined);
+});
 </script>

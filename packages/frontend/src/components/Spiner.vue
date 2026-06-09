@@ -2,15 +2,8 @@
   <div :class="['sp', 'sp-sphere', { center: isCenter }]"></div>
 </template>
 
-<script>
-export default {
-  props: {
-    isCenter: {
-      type: Boolean,
-      default: true
-    }
-  }
-};
+<script setup lang="ts">
+withDefaults(defineProps<{ isCenter?: boolean }>(), { isCenter: true });
 </script>
 
 <style lang="scss" scoped>

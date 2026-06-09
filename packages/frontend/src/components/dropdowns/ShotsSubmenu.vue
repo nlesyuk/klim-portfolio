@@ -1,50 +1,19 @@
 <template>
   <nav class="header__nav-submenu">
     <ul>
-      <li>
+      <li
+        v-for="filter in ['all', 'portrait', 'landscape', 'mood']"
+        :key="filter"
+      >
         <router-link
-          exact
           exact-active-class="active"
-          :to="{ path: '/shots', query: { filter: 'all' } }"
+          :to="{ path: '/shots', query: { filter } }"
           class="header__nav-submenu-item"
+          >{{ filter }}</router-link
         >
-          all
-        </router-link>
-      </li>
-      <li>
-        <router-link
-          exact-path
-          exact-active-class="active"
-          :to="{ path: '/shots', query: { filter: 'portrait' } }"
-          class="header__nav-submenu-item"
-        >
-          portrait
-        </router-link>
-      </li>
-      <li>
-        <router-link
-          exact-path
-          exact-active-class="active"
-          :to="{ path: '/shots', query: { filter: 'landscape' } }"
-          class="header__nav-submenu-item"
-        >
-          landscape
-        </router-link>
-      </li>
-      <li>
-        <router-link
-          exact-path
-          exact-active-class="active"
-          :to="{ path: '/shots', query: { filter: 'mood' } }"
-          class="header__nav-submenu-item"
-        >
-          mood
-        </router-link>
       </li>
     </ul>
   </nav>
 </template>
 
-<script>
-export default {};
-</script>
+<script setup lang="ts"></script>

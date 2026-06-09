@@ -1,11 +1,11 @@
 <template>
-  <ul class="dashboard-slides" v-if="slides && slides.length">
+  <ul v-if="slides && slides.length" class="dashboard-slides">
     <li
       v-for="(item, index) in slides"
       :key="index"
       :class="[
         'dashboard-slides__item',
-        { 'type-video': item.type === 'video' }
+        { 'type-video': item.type === 'video' },
       ]"
     >
       <div class="dashboard-slides__top">
@@ -22,14 +22,14 @@
           <button
             type="submit"
             class="dashboard__btn-inline"
-            @click="onEdit(item.id)"
+            @click="emit('edit', item.id)"
           >
             Edit
           </button>
           <button
             type="button"
             class="dashboard__btn-inline"
-            @click="onDelete(item.id)"
+            @click="emit('delete', item.id)"
           >
             Delete
           </button>
@@ -47,31 +47,23 @@
         <img :src="item.image" class="slides__img" />
       </template>
       <template v-else-if="item.type === 'video'">
-        <VimeoVideoPlayer :id="item.videos.vimeoId" />
+        <VimeoVideoPlayer :id="vimeoId(item.videos)" />
       </template>
       <template v-else> bad type: {{ item.type }} </template>
     </li>
   </ul>
 </template>
-<script>
-import VimeoVideoPlayer from "@/components/VimeoVideoPlayer";
-export default {
-  props: {
-    slides: {
-      type: Array,
-      required: true
-    }
-  },
-  components: {
-    VimeoVideoPlayer
-  },
-  methods: {
-    onEdit(item) {
-      this.$emit("edit", item);
-    },
-    onDelete(item) {
-      this.$emit("delete", item);
-    }
-  }
-};
+
+<script setup lang="ts">
+import VimeoVideoPlayer from "@/components/VimeoVideoPlayer.vue";
+import type { Slide, WorkVideos } from "@/models";
+
+defineProps<{ slides: Slide[] }>();
+const emit = defineEmits<{ edit: [id: number]; delete: [id: number] }>();
+
+function vimeoId(v: Slide["videos"]): string {
+  if (!v) return "";
+  const obj = typeof v === "string" ? (JSON.parse(v) as WorkVideos) : v;
+  return obj.vimeoId ?? "";
+}
 </script>

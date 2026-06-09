@@ -2,16 +2,15 @@
   <div class="shots">
     <div class="shots__tags">
       <button
-        type="button"
         v-for="(name, idx) in categories"
         :key="idx"
-        @click="changeFilter(name)"
+        type="button"
         :class="['btn', 'btn-primary', { active: filter === name }]"
+        @click="changeFilter(name)"
       >
         {{ name }}
       </button>
     </div>
-
     <transition name="fade" mode="out-in">
       <template v-if="toggle">
         <PhotosGrid
@@ -27,75 +26,37 @@
     </transition>
   </div>
 </template>
-<script>
-import PhotosGrid from "../components/PhotosGrid";
-import { mapActions, mapState } from "vuex";
+
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import PhotosGrid from "@/components/PhotosGrid.vue";
+import Spiner from "@/components/Spiner.vue";
+import { useShotsQuery, shotCategories } from "@/composables/useShots";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotosGrid
-  },
-  data() {
-    return {
-      toggle: true, // for relaunch gridPhotos component when change filter
-      filteredShots: []
-    };
-  },
-  computed: {
-    filter() {
-      return this.$route.query.filter;
-    },
-    ...mapState({
-      allShots: state => state.shots.shots,
-      categories: state => state.shots.categories
-    }),
-    sortedFilteredShots() {
-      return [...this.filteredShots].sort((a, b) => b.id - a.id);
-    }
-  },
-  watch: {
-    $route(route) {
-      const filter = route.query.filter;
-      this.applyFilter(filter);
-    }
-  },
-  methods: {
-    ...mapActions(["getAllShots"]),
-    init() {
-      if (!this.allShots.length) {
-        this.getAllShots().then(data => {
-          this.filteredShots = data;
+const route = useRoute();
+const router = useRouter();
+const { data, isPending } = useShotsQuery();
 
-          // apply filter if exist in route
-          const filter = this.$route?.query?.filter;
-          if (filter) {
-            this.applyFilter(filter);
-          }
-        });
-      }
-      this.filteredShots = this.allShots;
-    },
-    changeFilter(filter) {
-      this.toggle = false;
-      if (this.$route.query.filter !== filter) {
-        this.$router.replace({ name: "shots", query: { filter } });
-        this.applyFilter(filter);
-        setTimeout(() => {
-          this.toggle = true;
-        }, 300);
-      }
-    },
-    applyFilter(key) {
-      this.filteredShots =
-        key === "all"
-          ? this.allShots
-          : this.allShots.filter(item => item.categories.includes(key));
-    }
-  },
-  mounted() {
-    setTitle("Shots");
-    this.init();
+const filter = computed(() => route.query.filter as string | undefined);
+const categories = shotCategories;
+const toggle = computed(() => !isPending.value);
+
+const filteredShots = computed(() => {
+  const all = data.value ?? [];
+  const key = filter.value;
+  if (!key || key === "all") return all;
+  return all.filter((item) => item.categories?.includes(key));
+});
+
+function changeFilter(f: string) {
+  if (route.query.filter !== f) {
+    router.replace({ name: "shots", query: { filter: f } });
   }
-};
+}
+
+onMounted(() => {
+  setTitle("Shots");
+});
 </script>

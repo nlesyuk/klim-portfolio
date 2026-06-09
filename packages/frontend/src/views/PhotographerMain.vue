@@ -4,7 +4,7 @@
     <PhotosPreviewGrid
       v-if="allPhotos && allPhotos.length"
       :photos="allPhotos"
-    ></PhotosPreviewGrid>
+    />
     <p
       v-else-if="allPhotos && allPhotos.length === 0"
       class="home__empty-category"
@@ -15,52 +15,34 @@
   </div>
 </template>
 
-<script>
-import PhotosPreviewGrid from "../components/PhotosPreviewGrid";
-import Slider from "./Slider";
-import { mapActions, mapState } from "vuex";
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import PhotosPreviewGrid from "@/components/PhotosPreviewGrid.vue";
+import Slider from "@/views/Slider.vue";
+import Spiner from "@/components/Spiner.vue";
+import { usePhotosQuery } from "@/composables/usePhotos";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotosPreviewGrid,
-    Slider
-  },
-  computed: {
-    ...mapState({
-      photos: state => state.photos.photos
-    }),
-    allPhotos() {
-      const category = this.$route?.query?.filter;
+const route = useRoute();
+const { data } = usePhotosQuery();
 
-      const filtered = {
-        all: this.photos,
-        automotive: this.photos?.filter(item =>
-          item?.categories?.includes("automotive")
-        ),
-        fashion: this.photos?.filter(item =>
-          item?.categories?.includes("fashion")
-        ),
-        lifestyle: this.photos?.filter(item =>
-          item?.categories?.includes("lifestyle")
-        ),
-        personal: this.photos?.filter(item =>
-          item?.categories?.includes("personal")
-        )
-      };
+const allPhotos = computed(() => {
+  const photos = data.value;
+  const category = route.query.filter as string | undefined;
+  const byCat = (key: string) =>
+    photos?.filter((item) => item.categories?.includes(key));
+  const filtered = {
+    all: photos,
+    automotive: byCat("automotive"),
+    fashion: byCat("fashion"),
+    lifestyle: byCat("lifestyle"),
+    personal: byCat("personal"),
+  } as const;
+  return filtered[category as keyof typeof filtered] ?? photos;
+});
 
-      return filtered[category] || this.photos;
-    }
-  },
-  methods: {
-    ...mapActions(["getPhotos"])
-  },
-  mounted() {
-    setTitle("Portfolio");
-
-    if (!this.photos) {
-      this.getPhotos();
-    }
-  }
-};
+onMounted(() => {
+  setTitle("Portfolio");
+});
 </script>

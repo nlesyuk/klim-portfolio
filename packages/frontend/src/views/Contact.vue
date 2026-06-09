@@ -1,6 +1,6 @@
 <template>
   <div class="contact">
-    <div class="contact__main" v-if="contacts">
+    <div v-if="contacts" class="contact__main">
       <div class="contact__top-container">
         <figure class="contact__figure">
           <img v-if="image" :src="image" class="contact__img" loading="lazy" />
@@ -12,52 +12,46 @@
           />
         </figure>
         <div class="contact__info">
-          <span class="contact__text" v-if="contacts.email">
-            Email
-            <a :href="`mailto:${contacts.email}`">{{ contacts.email }}</a>
+          <span v-if="contacts.email" class="contact__text">
+            Email <a :href="`mailto:${contacts.email}`">{{ contacts.email }}</a>
           </span>
-          <span class="contact__text" v-if="contacts.phone">
-            phone number
-            <a :href="`tel:${phone}`">{{ contacts.phone }}</a>
+          <span v-if="contacts.phone" class="contact__text">
+            phone number <a :href="`tel:${phone}`">{{ contacts.phone }}</a>
           </span>
           <div class="contact__text">
             social media
             <ul class="contact__social">
               <li>
-                <a :href="contacts.facebook" target="_blank">
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <use xlink:href="#svg-sprite--facebook"></use>
-                  </svg>
-                </a>
+                <a :href="contacts.facebook" target="_blank"
+                  ><svg width="24" height="24" viewBox="0 0 24 24">
+                    <use xlink:href="#svg-sprite--facebook"></use></svg
+                ></a>
               </li>
               <li>
-                <a :href="contacts.instagram" target="_blank">
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <use xlink:href="#svg-sprite--instagram"></use>
-                  </svg>
-                </a>
+                <a :href="contacts.instagram" target="_blank"
+                  ><svg width="24" height="24" viewBox="0 0 24 24">
+                    <use xlink:href="#svg-sprite--instagram"></use></svg
+                ></a>
               </li>
               <li>
-                <a :href="contacts.telegram" target="_blank">
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <use xlink:href="#svg-sprite--telegram"></use>
-                  </svg>
-                </a>
+                <a :href="contacts.telegram" target="_blank"
+                  ><svg width="24" height="24" viewBox="0 0 24 24">
+                    <use xlink:href="#svg-sprite--telegram"></use></svg
+                ></a>
               </li>
               <li>
-                <a :href="contacts.vimeo" target="_blank">
-                  <svg width="24" height="24" viewBox="0 0 24 24">
-                    <use xlink:href="#svg-sprite--vimeo"></use>
-                  </svg>
-                </a>
+                <a :href="contacts.vimeo" target="_blank"
+                  ><svg width="24" height="24" viewBox="0 0 24 24">
+                    <use xlink:href="#svg-sprite--vimeo"></use></svg
+                ></a>
               </li>
             </ul>
           </div>
         </div>
       </div>
       <div
-        class="contact__description"
         v-if="description"
+        class="contact__description"
         v-html="description"
       ></div>
       <iframe
@@ -71,51 +65,41 @@
     </div>
   </div>
 </template>
-<script>
-import { mapActions, mapState } from "vuex";
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import { useContactsQuery } from "@/composables/useContacts";
 import { setTitle } from "@/helper";
 
-export default {
-  data() {
-    return {
-      isActivateCalendar: false
-    };
-  },
-  computed: {
-    image() {
-      return this.contacts?.image;
-    },
-    phone() {
-      if (!this.contacts) return null;
-      return this.contacts.phone.replace(/[^\w\s]/gi, "").replace(/\s/gi, "");
-    },
-    ...mapState({
-      contacts: state => state.general.contacts
-    }),
-    description() {
-      try {
-        const res = JSON.parse(this.contacts?.description);
-        return res;
-      } catch (e) {
-        const res = this.contacts?.description;
-        return res;
-      }
-    }
-  },
-  methods: {
-    ...mapActions(["getContacts"])
-  },
-  mounted() {
-    setTitle("Contact");
-    if (!this.contacts) {
-      this.getContacts();
-    }
+const route = useRoute();
+const { data } = useContactsQuery();
 
-    // /contact/?calendar=on
-    if (this.$route.query.calendar === "on") {
-      this.isActivateCalendar = true;
-      setTitle("Calendar");
-    }
+const isActivateCalendar = ref(false);
+
+const contacts = computed(() => data.value);
+const image = computed(() => contacts.value?.image);
+const phone = computed(() => {
+  if (!contacts.value?.phone) return null;
+  return String(contacts.value.phone)
+    .replace(/[^\w\s]/gi, "")
+    .replace(/\s/gi, "");
+});
+const description = computed(() => {
+  const d = contacts.value?.description;
+  if (!d) return undefined;
+  try {
+    return JSON.parse(d);
+  } catch {
+    return d;
   }
-};
+});
+
+onMounted(() => {
+  setTitle("Contact");
+  if (route.query.calendar === "on") {
+    isActivateCalendar.value = true;
+    setTitle("Calendar");
+  }
+});
 </script>

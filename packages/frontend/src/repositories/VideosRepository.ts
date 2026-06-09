@@ -1,22 +1,23 @@
 import Repository from "./Repository";
+import type { AxiosResponse } from "axios";
+import type { Work } from "@/models";
 
 const resources = "work";
 
-// use CRUD model for build repository
 export default {
-  getAllVideos() {
+  getAllVideos(): Promise<AxiosResponse<Work[]>> {
     return Repository.get(`${resources}`);
   },
-  getVideo(id) {
+  getVideo(id: number | string | unknown): Promise<AxiosResponse<Work>> {
     return Repository.get(`${resources}/${id}`);
   },
-  create(payload) {
+  create(payload: FormData): Promise<AxiosResponse<Work>> {
     return Repository.post(`${resources}`, payload);
   },
-  update(payload) {
+  update(payload: FormData): Promise<AxiosResponse<Work>> {
     return Repository.put(`${resources}`, payload);
   },
-  delete(id) {
+  delete(id: number | string | unknown): Promise<AxiosResponse<void>> {
     return Repository.delete(`${resources}/${id}`);
-  }
+  },
 };

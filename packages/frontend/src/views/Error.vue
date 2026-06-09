@@ -7,17 +7,12 @@
   </div>
 </template>
 
-<script>
-export default {
-  props: {
-    statusCode: {
-      type: [Number, String],
-      default: 400
-    },
-    message: {
-      type: [String],
-      default: "Some error"
-    }
-  }
-};
+<script setup lang="ts">
+withDefaults(
+  defineProps<{ statusCode?: number | string; message?: string }>(),
+  {
+    statusCode: 400,
+    message: "Some error",
+  },
+);
 </script>

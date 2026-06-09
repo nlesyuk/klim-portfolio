@@ -1,30 +1,25 @@
 <template>
   <nav class="categories">
-    <router-link
-      exact
-      exact-active-class="active"
-      tag="button"
-      class="categories__item"
+    <button
       v-for="cat in categories"
       :key="cat"
-      :to="{ path: '/', query: { filter: `${cat}`.toLowerCase() } }"
+      class="categories__item"
+      :class="{ active: $route.query.filter === cat.toLowerCase() }"
+      @click="router.push({ path: '/', query: { filter: cat.toLowerCase() } })"
     >
       {{ cat }}
-    </router-link>
+    </button>
   </nav>
 </template>
 
-<script>
+<script setup lang="ts">
+import { useRouter, useRoute } from "vue-router";
 import { categories } from "@/helper/constants";
 
-export default {
-  computed: {
-    categories() {
-      return categories;
-    }
-  }
-};
+const router = useRouter();
+const $route = useRoute();
 </script>
+
 <style lang="scss">
 @import "../scss/_variables";
 @import "../scss/_mixins";
@@ -42,7 +37,8 @@ export default {
     color: $grey;
     cursor: pointer;
     @include transition-default;
-    &:hover {
+    &:hover,
+    &.active {
       background-color: $accent;
       color: $primary;
       @include transition-default;

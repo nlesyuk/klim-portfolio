@@ -5,7 +5,7 @@
         v-for="(photo, idx) in photos"
         :key="idx"
         :collection="photo"
-        :collectionType="idx % 2 ? 'left' : 'right'"
+        :collection-type="idx % 2 ? 'left' : 'right'"
       />
     </template>
     <p v-else-if="photos && photos.length === 0" class="home__empty-category">
@@ -14,37 +14,26 @@
     <Spiner v-else />
   </div>
 </template>
-<script>
-import PhotoPreview from "../components/PhotoPreview";
-import { mapActions, mapState, mapGetters } from "vuex";
+
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import PhotoPreview from "@/components/PhotoPreview.vue";
+import Spiner from "@/components/Spiner.vue";
+import { usePhotosQuery } from "@/composables/usePhotos";
 import { isCinematographerMode } from "@/helper/constants";
 import { setTitle } from "@/helper";
 
-export default {
-  components: {
-    PhotoPreview
-  },
-  computed: {
-    ...mapState({
-      allPhotos: state => state.photos.photos
-    }),
-    ...mapGetters(["photographerPhotos", "cinematographerPhotos"]),
-    photos() {
-      return isCinematographerMode
-        ? this.cinematographerPhotos
-        : this.photographerPhotos;
-    }
-  },
-  methods: {
-    ...mapActions(["getPhotos"])
-  },
-  created() {
-    if (!this.allPhotos) {
-      this.getPhotos();
-    }
-  },
-  mounted() {
-    setTitle("Photos");
-  }
-};
+const { data } = usePhotosQuery();
+
+const photos = computed(() => {
+  const all = data.value;
+  if (!all) return undefined;
+  return isCinematographerMode
+    ? all
+    : all.filter((item) => item.categories?.includes("personal"));
+});
+
+onMounted(() => {
+  setTitle("Photos");
+});
 </script>

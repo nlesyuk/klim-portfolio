@@ -1,22 +1,20 @@
 <template>
-  <section class="dashboard-nav" v-if="!isDashboard">
+  <section v-if="!isDashboard" class="dashboard-nav">
     <nav class="dashboard-nav__menu">
-      <router-link
-        v-for="item in $options.menu"
+      <button
+        v-for="item in menuItems"
         :key="item"
-        tag="button"
         class="dashboard-nav__menu-item"
-        :to="{ name: `dasboard-${item}` }"
+        @click="router.push({ name: `dasboard-${item}` })"
       >
         {{ item }}
-      </router-link>
-      <router-link
-        tag="button"
+      </button>
+      <button
         class="dashboard-nav__menu-item"
-        :to="{ name: 'dashboard' }"
+        @click="router.push({ name: 'dashboard' })"
       >
         dashboard
-      </router-link>
+      </button>
       <button class="dashboard-nav__menu-item" role="logout" @click="logoutFn">
         <svg
           width="14"
@@ -35,31 +33,31 @@
   </section>
 </template>
 
-<script>
-import { mapActions } from "vuex";
+<script setup lang="ts">
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 import { menu } from "@/helper/constants";
 
-export default {
-  menu,
-  computed: {
-    isDashboard() {
-      const path = this.$route.path;
-      const isIncludes = path.split("/").some(v => ["dashboard"].includes(v));
-      return isIncludes;
-    }
-  },
-  methods: {
-    ...mapActions("auth", ["logout"]),
-    async logoutFn() {
-      try {
-        await this.logout();
-      } catch (error) {}
-      // eslint-disable-next-line no-console
-      console.error("logout", error);
-    }
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+
+const menuItems = menu;
+
+const isDashboard = computed(() =>
+  route.path.split("/").some((v) => ["dashboard"].includes(v)),
+);
+
+async function logoutFn() {
+  try {
+    await authStore.logout();
+  } catch (error) {
+    console.error("logout", error);
   }
-};
+}
 </script>
+
 <style lang="scss" scoped>
 $color: rgb(136, 136, 136);
 $colorHover: rgb(75, 75, 75);
@@ -67,7 +65,6 @@ $colorHover: rgb(75, 75, 75);
 .dashboard-nav {
   position: fixed;
   left: 50%;
-  top: 50%;
   top: 12px;
   width: auto;
   max-width: 100%;
@@ -78,24 +75,27 @@ $colorHover: rgb(75, 75, 75);
   z-index: 101;
   transform: translate(-50%, -50%);
   border-radius: 5px;
-
-  box-shadow: rgb(204, 219, 232) 3px 3px 6px 0px inset,
+  box-shadow:
+    rgb(204, 219, 232) 3px 3px 6px 0px inset,
     rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset;
+
   &__menu {
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 1px 0;
+
     &-item {
       background-color: transparent;
       border: none;
       padding: 0 6px;
       color: $color;
       transition: all 0.25s;
+      cursor: pointer;
+
       &:hover {
         color: $colorHover;
-        cursor: pointer;
         transition: all 0.25s;
         svg {
           fill: $colorHover;

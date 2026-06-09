@@ -1,6 +1,6 @@
 export const keys = {
   user: "user",
-  theme: "theme"
+  theme: "theme",
 };
 
 export default class StorageService {
@@ -10,12 +10,12 @@ export default class StorageService {
     this.key = key;
   }
 
-  get(): any {
+  get<T = unknown>(): T | null {
     const res = localStorage.getItem(this.key);
-    return res ? JSON.parse(res) : null;
+    return res ? (JSON.parse(res) as T) : null;
   }
 
-  set(data: any): boolean {
+  set(data: unknown): boolean {
     localStorage.setItem(this.key, JSON.stringify(data));
     return true;
   }

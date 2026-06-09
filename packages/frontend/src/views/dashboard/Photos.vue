@@ -2,34 +2,33 @@
   <section class="dashboard-photos">
     <button
       type="button"
-      @click="isShowAddPhoto = !isShowAddPhoto"
       class="dashboard__btn"
+      @click="isShowAddPhoto = !isShowAddPhoto"
     >
       Add photo
     </button>
     <PhotoAdd
       v-if="isShowAddPhoto"
-      :isEdit="isEdit"
-      :photoCollection="photoCollection"
-    ></PhotoAdd>
-
-    <button type="button" @click="refresh" class="dashboard__btn">
+      :is-edit="isEdit"
+      :photo-collection="photoCollection"
+    />
+    <button type="button" class="dashboard__btn" @click="refresh">
       Refresh photos
     </button>
 
-    <label v-if="$options.isPhotographerMode" class="dashboard__checkbox">
-      <input type="checkbox" v-model="personal" />
+    <label v-if="isPhotographerMode" class="dashboard__checkbox">
+      <input v-model="personal" type="checkbox" />
       Personal({{ personal ? "on" : "off" }})
     </label>
 
-    <div class="dashboard-photos__container" v-if="!isPhotosEmpty">
+    <div v-if="!isPhotosEmpty" class="dashboard-photos__container">
       <PhotoPreview
         v-for="(item, idx) in photos"
         :key="idx"
         :collection="item"
-        :collectionType="idx % 2 ? 'left' : 'right'"
+        :collection-type="idx % 2 ? 'left' : 'right'"
       >
-        <ul class="dashboard__list" v-if="isManage">
+        <ul v-if="isManage" class="dashboard__list">
           <li>
             <button
               type="button"
@@ -68,15 +67,13 @@
               id:{{ item.id }}
             </button>
           </li>
-
           <li>
             <span
-              class="dashboard__badge badge-blue"
-              v-for="(category, index) in item.category"
+              v-for="(category, index) in item.categories"
               :key="index"
+              class="dashboard__badge badge-blue"
+              >{{ category }}</span
             >
-              {{ category }}
-            </span>
           </li>
           <li class="dashboard__badge badge-green color-black">
             {{ getCategories(item.categories) }}
@@ -91,93 +88,69 @@
   </section>
 </template>
 
-<script>
-import { mapState, mapActions, mapGetters } from "vuex";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
-import PhotoPreview from "@/components/PhotoPreview";
-import PhotoAdd from "./PhotoAdd";
-const PhotosRepository = RepositoryFactory.get("photos");
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { useRoute } from "vue-router";
+import { useQueryClient } from "@tanstack/vue-query";
+import PhotoAdd from "./PhotoAdd.vue";
+import PhotoPreview from "@/components/PhotoPreview.vue";
+import Spiner from "@/components/Spiner.vue";
+import { usePhotosQuery, useDeletePhoto } from "@/composables/usePhotos";
+import { queryKeys } from "@/queries/keys";
 import { isCinematographerMode, isPhotographerMode } from "@/helper/constants";
+import type { PhotoCollection } from "@/models";
 
-export default {
-  isPhotographerMode,
-  components: {
-    PhotoAdd,
-    PhotoPreview
-  },
-  data() {
-    return {
-      isEdit: false,
-      isManage: true,
-      isShowAddPhoto: false,
-      photoCollection: null,
-      personal: false
-    };
-  },
-  computed: {
-    ...mapState({
-      allPhotos: state => state.photos.photos
-    }),
-    ...mapGetters(["photosPersonal"]),
-    // use getters instead of
-    photographerPhotos() {
-      if (this.personal) {
-        return this.allPhotos?.filter(v => v?.categories.includes("personal"));
-      }
-      return this.allPhotos;
-    },
-    cinematographerPhotos() {
-      const photos = this.allPhotos;
-      if (!photos) {
-        return false;
-      }
+const route = useRoute();
+const qc = useQueryClient();
+const { data } = usePhotosQuery();
+const { mutate: deletePhoto } = useDeletePhoto();
 
-      const sortedPhotos = this.$route.path.includes("commerce")
-        ? photos.filter(v => v.categories.includes("commerce"))
-        : photos;
+const isEdit = ref(false);
+const isManage = ref(true);
+const isShowAddPhoto = ref(false);
+const photoCollection = ref<PhotoCollection | undefined>(undefined);
+const personal = ref(false);
 
-      // return res.length ? res : this.allPhotos;
-      return sortedPhotos.sort((a, b) => b.order - a.order); // new add to the begin
-      // return sortedPhotos.sort((a, b) => a.order - b.order); // new add to the end
-    },
-    //
-    photos() {
-      return isCinematographerMode
-        ? this.cinematographerPhotos
-        : this.photographerPhotos;
-    },
-    isPhotosEmpty() {
-      return !this.photos?.length;
-    }
-  },
-  methods: {
-    ...mapActions(["getPhotos"]),
-    remove(id) {
-      PhotosRepository.delete(id);
-    },
-    refresh() {
-      this.getPhotos();
-    },
-    getCategories(arr) {
-      if (Array.isArray(arr)) {
-        return arr.join(", ");
-      }
-      return arr;
-    },
-    // edit
-    edit(id) {
-      this.isEdit = true;
-      const item = this.allPhotos.filter(v => v.id === id);
-      this.photoCollection = item?.length ? item[0] : null;
-      this.isShowAddPhoto = true;
-    }
-  },
-  created() {
-    if (!this.allPhotos) {
-      this.getPhotos();
-    }
-  }
-};
+const allPhotos = computed(() => data.value);
+
+const photographerPhotos = computed(() => {
+  if (personal.value)
+    return allPhotos.value?.filter((v) => v.categories?.includes("personal"));
+  return allPhotos.value;
+});
+
+const cinematographerPhotos = computed(() => {
+  const p = allPhotos.value;
+  if (!p) return undefined;
+  const sorted = route.path.includes("commerce")
+    ? p.filter((v) => v.categories?.includes("commerce"))
+    : p;
+  return [...sorted].sort((a, b) => b.order - a.order);
+});
+
+const photos = computed(() =>
+  isCinematographerMode
+    ? cinematographerPhotos.value
+    : photographerPhotos.value,
+);
+const isPhotosEmpty = computed(() => !photos.value?.length);
+
+function remove(id: number) {
+  deletePhoto(id);
+}
+function refresh() {
+  qc.invalidateQueries({ queryKey: queryKeys.photos() });
+}
+function getCategories(arr: unknown) {
+  if (Array.isArray(arr)) return arr.join(", ");
+  return arr;
+}
+function edit(id: number) {
+  isEdit.value = true;
+  const item = allPhotos.value?.filter((v) => v.id === id);
+  photoCollection.value = item?.length ? item[0] : undefined;
+  isShowAddPhoto.value = true;
+}
 </script>
 
 <style></style>

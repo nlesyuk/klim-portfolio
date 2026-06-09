@@ -40,7 +40,7 @@ Migration plan for `packages/frontend` from Vue 2.6 (Options API, Vue CLI, Vuex 
 
 ---
 
-## Phase 0 — Audit (≈1 day)
+## Phase 0 — Audit (≈1 day) ✅ DONE
 
 Run these greps from `packages/frontend/` and record hits per file. Each becomes a migration ticket.
 
@@ -65,106 +65,74 @@ grep -rln "vuelidate\|hooper\|vue-stripe-menu\|vue2-editor" src/
 ```
 
 **Deliverable:** `docs/audit.md` with file × issue matrix. Estimate per file (S/M/L). Identify the 3–5 highest-risk files.
+> ✅ Delivered: `docs/audit.md` created.
 
 ---
 
-## Phase 1 — Tooling swap (still on Vue 2) (≈1–2 days)
+## Phase 1 — Tooling swap (≈1–2 days) ✅ DONE
 
 Decouple build migration from framework migration so each step is verifiable.
 
-1. **Add Vite alongside Vue CLI**
-   - Install `vite`, `@vitejs/plugin-vue2`, `vite-plugin-vue2-script-setup` (if needed for incremental setup syntax)
-   - Create `vite.config.ts`. Port these from `vue.config.js`:
-     - Entry: `src/main.ts`
-     - Alias: `@` → `src/`, `Repositories` → `src/repositories/`
-     - Public dir: `public/`
-     - SCSS preprocessor opts
-   - Add npm scripts: `dev:vite`, `build:vite`. Keep `serve`/`build` (CLI) until parity confirmed.
-2. **Replace `node-sass` with `sass`** — usually a no-op aside from a few `/deep/` → `:deep()` audits (defer the latter to Phase 4).
-3. **Verify dev + production build green** on Vite. Compare bundle output sanity.
-4. **Cut over scripts:** `serve` → Vite, remove `@vue/cli-*` deps, delete `vue.config.js`, `babel.config.js` (only if not needed by remaining tooling).
-5. **ESLint:** upgrade to `eslint-plugin-vue@9` (supports v2 and v3), Prettier 3, `@typescript-eslint@7+`.
+1. ✅ **Add Vite** — `vite.config.ts` created with `@vitejs/plugin-vue`, `vite-plugin-pwa`, `@` + `Repositories` aliases.
+2. ✅ **Replace `node-sass` with `sass`** (dart-sass).
+3. ✅ **`package.json` rewritten** — `@vue/cli-*` removed, Vite 5 + `vue-tsc` added.
+4. ✅ **`public/index.html`** — webpack template vars removed, `<script type="module" src="/src/main.ts">` added.
+5. ✅ **ESLint upgraded** — `.eslintrc.js` rewritten for `eslint-plugin-vue@9` (`plugin:vue/vue3-recommended`), `@vue/eslint-config-typescript@13`, `@vue/eslint-config-prettier@9`, Prettier 3. Dropped Vue 2-era `@vue/typescript/recommended` + `@vue/prettier/@typescript-eslint` chain. `vue/multi-word-component-names` disabled to keep `Nav.vue`, `Footer.vue`, etc. `npm run lint` clean (0 errors, 28 stylistic warnings — `no-console` in catch blocks + minor prettier). One `vue/no-mutating-props` suppression in `ShotEdit.vue` with `TODO(Phase 8)` to refactor to local-draft + emit.
 
 **Exit criteria:** App runs on Vite, builds clean, eslint passes, no Vue CLI deps in `package.json`.
+> ✅ Done.
 
 ---
 
-## Phase 2 — Vue 3 core swap (≈2 days)
+## Phase 2 — Vue 3 core swap (≈2 days) ✅ DONE
 
-1. **Bump deps:**
-   - `vue@^3.4`
-   - `vue-router@^4`
-   - **Remove** `vuex` → add `pinia@^2`
-   - Swap `@vitejs/plugin-vue2` → `@vitejs/plugin-vue`
-   - Remove `vue-template-compiler`
-2. **Rewrite `src/main.ts`:**
-   ```ts
-   import { createApp } from "vue"
-   import { createPinia } from "pinia"
-   import App from "./App.vue"
-   import router from "./router"
-   import "./registerServiceWorker"
-   import "@/scss/style.scss"
-
-   const app = createApp(App)
-   app.use(createPinia())
-   app.use(router)
-   app.mount("#app")
-   ```
-   - Move `$message` / `$error` out of `Vue.prototype` → **composable** `useNotify()` returning `{ success, error }` (preferred) OR `app.config.globalProperties.$message` as a transitional shim.
-   - Drop `globalThis.SimpleLightbox` — import locally where used.
-   - Drop global `Vue.component("Spiner", ...)` / `Vue.component("Error", ...)` — import per-view.
-3. **Rewrite `src/router/index.ts`:**
-   ```ts
-   import { createRouter, createWebHistory } from "vue-router"
-   const router = createRouter({
-     history: createWebHistory(import.meta.env.BASE_URL),
-     routes: [/* ... */],
-   })
-   ```
-   - Update guards: `next()` still works but prefer return-value style.
-4. **App bootstraps but most pages will break** — that's expected. Land Phase 2 even if pages render with errors; subsequent phases fix them.
+1. ✅ **Bump deps:** `vue@^3.4`, `vue-router@^4`, `pinia@^2`, `@vitejs/plugin-vue`; removed `vuex`, `vue-template-compiler`.
+2. ✅ **`src/main.ts`** rewritten — `createApp`, `createPinia`, `useNotify()` composable replacing `Vue.prototype.$message/$error`, `SimpleLightbox` removed from `globalThis`.
+3. ✅ **`src/router/index.ts`** rewritten — `createRouter` + `createWebHistory`, wildcard `/:pathMatch(.*)*`, return-value guards using `useAuthStore`.
+4. ✅ **`src/shims-vue.d.ts`** updated for Vue 3 `DefineComponent`.
+5. ✅ **`src/registerServiceWorker.ts`** replaced with no-op stub (PWA handled by `vite-plugin-pwa`).
+6. ✅ **`src/helper/constants.ts`** — `process.env.VUE_APP_*` → `import.meta.env.VITE_*`.
+7. ✅ **Composables created:** `src/composables/useNotify.ts`, `src/composables/useSiteMode.ts`.
 
 **Exit criteria:** `npm run dev` starts, root route renders (even if minimal), no `Vue.` references remain in `src/`.
+> ✅ Done.
 
 ---
 
-## Phase 3 — Replace blocker deps (≈3–4 days)
+## Phase 3 — Replace blocker deps (≈3–4 days) ✅ DONE
 
 Tackle in this order — least to most risky:
 
-1. **`node-sass` cleanup** (if any `/deep/` selectors): convert to `:deep()`.
-2. **Vuelidate → `@vuelidate/core`** — rewrite affected forms (`Login.vue`, `Contact.vue`, dashboard add/edit views) using `useVuelidate` in composition style.
-3. **Hooper → Swiper v11** in `src/components/Slides.vue`. Update slide template structure.
-4. **vue2-editor → Tiptap** in dashboard editor views. Define a small wrapper component to isolate the swap.
-5. **vue-stripe-menu replacement** in `src/components/Nav.vue` (HIGHEST RISK):
-   - Time-box: **2 days**.
-   - Fallback: plain CSS dropdown + transition. Acceptance = same visual hover/click behavior on desktop, hamburger on mobile.
-   - Refactor `$options.isPhotographerMode` into `useSiteMode()` composable returning a `ref<'photographer' | 'cinematographer'>`.
-6. **PWA:** swap to `vite-plugin-pwa`, port manifest/service-worker config.
+1. ✅ **`node-sass` cleanup** — replaced with `sass` (dart-sass).
+2. ✅ **Vuelidate → `@vuelidate/core`** — `useVuelidate` in `Contacts.vue`, `SlideAdd.vue`, `PhotoAdd.vue`, `WorkAdd.vue`.
+3. ✅ **Hooper → Swiper v11** in `src/views/Slider.vue` — `Swiper`/`SwiperSlide`, `Navigation`/`Pagination`/`Autoplay` modules.
+4. ✅ **vue2-editor → Tiptap** — `src/components/RichEditor.vue` wrapper (`@tiptap/vue-3` + `StarterKit`); dropped in all dashboard editor views.
+5. ✅ **vue-stripe-menu replacement** in `src/components/Nav.vue` — custom CSS dropdown with scoped SCSS, hover/click behavior on desktop, hamburger on mobile. `$options.isPhotographerMode` refactored into `useSiteMode()` composable.
+6. ✅ **PWA:** `vite-plugin-pwa` wired in `vite.config.ts`; `registerServiceWorker.ts` replaced with stub.
 
 **Exit criteria:** All blocker deps removed from `package.json`; affected components render and behave at parity.
+> ✅ Done.
 
 ---
 
-## Phase 4 — Component migration: Options API → `<script setup lang="ts">` (≈5–7 days)
+## Phase 4 — Component migration: Options API → `<script setup lang="ts">` (≈5–7 days) ✅ DONE
 
 Migrate in dependency order (leaves first) so parents land on already-converted children.
 
-### Batch 1 — Leaf presentational
+### Batch 1 — Leaf presentational ✅ DONE
 `Spiner.vue`, `Footer.vue`, `SVG-sprite.vue`, `Slide.vue`, `Error.vue`, `NotFound.vue`
 
-### Batch 2 — Grids & previews
+### Batch 2 — Grids & previews ✅ DONE
 `PhotosGrid.vue`, `PhotosPreviewGrid.vue`, `PhotosGridShots.vue`, `WorksGrid.vue`, `PhotoPreview.vue`, `TheCategoryFilter.vue`, `VimeoVideoPlayer.vue`
 
-### Batch 3 — Nav & header
-`Header.vue`, `Nav.vue`, `dropdowns/*.vue`
+### Batch 3 — Nav & header ✅ DONE
+`Header.vue`, `Nav.vue`, `dropdowns/ShotsSubmenu.vue`, `dropdowns/PhotosSubmenu.vue`, `dropdowns/PortfolioSubmenu.vue`
 
-### Batch 4 — Public views
-`Main.vue`, `Work.vue`, `Shots.vue`, `Photo.vue`, `Photos.vue`, `Portfolio.vue`, `Personal.vue`, `Contact.vue`, `Login.vue`, `Slider.vue`, `PhotographerMain.vue`, `CinematogapherMain.vue`, `Calendar.vue`
+### Batch 4 — Public views ✅ DONE
+`App.vue`, `Main.vue`, `Work.vue`, `Shots.vue`, `Photo.vue`, `Photos.vue`, `Portfolio.vue`, `Personal.vue`, `Contact.vue`, `Login.vue`, `Slider.vue`, `PhotographerMain.vue`, `CinematogapherMain.vue`, `Calendar.vue`
 
-### Batch 5 — Dashboard (most logic, do last)
-`dashboard/*.vue` (CRUD views, editors, theme toggle)
+### Batch 5 — Dashboard ✅ DONE
+`dashboard/Dashboard.vue`, `dashboard/Contacts.vue`, `dashboard/PhotoAdd.vue`, `dashboard/Photos.vue`, `dashboard/ShotAdd.vue`, `dashboard/ShotEdit.vue`, `dashboard/Shots.vue`, `dashboard/SlideAdd.vue`, `dashboard/Slider.vue`, `dashboard/TheDashboardNav.vue`, `dashboard/ThemeToggle.vue`, `dashboard/WorkAdd.vue`, `dashboard/Works.vue`
 
 ### Per-file conversion checklist
 
@@ -187,18 +155,18 @@ Migrate in dependency order (leaves first) so parents land on already-converted 
 
 ---
 
-## Phase 5 — Pinia store migration (parallel with Phase 4)
+## Phase 5 — Pinia store migration (parallel with Phase 4) ✅ DONE
 
 Replace each Vuex module with a Pinia store 1:1. Recommend converting stores **before** Batch 4/5 views so dashboard work consumes the new API.
 
-| Vuex module   | Pinia store       | File                    |
-| ------------- | ----------------- | ----------------------- |
-| `general`     | `useGeneralStore` | `src/stores/general.ts` |
-| `videos`      | `useVideosStore`  | `src/stores/videos.ts`  |
-| `photos`      | `usePhotosStore`  | `src/stores/photos.ts`  |
-| `shots`       | `useShotsStore`   | `src/stores/shots.ts`   |
-| `slides`      | `useSlidesStore`  | `src/stores/slides.ts`  |
-| `auth.module` | `useAuthStore`    | `src/stores/auth.ts`    |
+| Vuex module   | Pinia store       | File                    | Status |
+| ------------- | ----------------- | ----------------------- | ------ |
+| `general`     | `useGeneralStore` | `src/stores/general.ts` | ✅      |
+| `videos`      | `useVideosStore`  | `src/stores/videos.ts`  | ✅      |
+| `photos`      | `usePhotosStore`  | `src/stores/photos.ts`  | ✅      |
+| `shots`       | `useShotsStore`   | `src/stores/shots.ts`   | ✅      |
+| `slides`      | `useSlidesStore`  | `src/stores/slides.ts`  | ✅      |
+| `auth.module` | `useAuthStore`    | `src/stores/auth.ts`    | ✅      |
 
 Use **setup-style** Pinia stores (composition syntax) for consistency with components:
 
@@ -217,23 +185,150 @@ Delete `src/store/` after all consumers are converted.
 
 ---
 
-## Phase 6 — Type tightening (≈2 days)
+## Phase 6 — Server-state → TanStack Query (≈2–3 days) ✅ DONE
 
-1. Define domain interfaces in `src/models/`: `Photo`, `Shot`, `Slide`, `Work`, `Contact`, `User`, `Category`.
-2. Type repositories in `src/repositories/` with axios generics:
-   ```ts
-   axios.get<Photo[]>("/api/photos")
+Replace the manual `RepositoryFactory` + Pinia server-state pattern with `@tanstack/vue-query` v5.
+Axios stays as the HTTP client; TanStack Query takes over caching, loading/error state, and background refetching.
+
+### What changes
+
+| Before (Pinia store) | After (TanStack Query) |
+| ---------------------------------------- | ---------------------------------------- |
+| `ref<T\|null>(null)` + `async fetchX()` | `useQuery({ queryKey, queryFn })` |
+| Manual `isLoading`/`serverError` refs | `isPending`, `isError`, `error` from hook |
+| `onMounted(() => store.fetch())` | auto-fetch on component mount |
+| `store.refresh()` button | `queryClient.invalidateQueries(key)` |
+| Pinia stores: photos, shots, slides, videos, general | **deleted** |
+| Pinia `useAuthStore` | **kept** (client/session state, not server state) |
+
+### Steps
+
+1. **Install deps**
+   ```bash
+   npm install @tanstack/vue-query
    ```
-3. Flip `tsconfig.json`:
-   - `noImplicitAny: true`
-   - `strict: true`
-   - `allowJs: false`
-4. Delete `src/shims-tsx.d.ts`; update `src/shims-vue.d.ts` for Vue 3 (`*.vue` exports `DefineComponent`).
-5. Fix fallout file-by-file. Use `// @ts-expect-error` sparingly with a `TODO(types):` comment.
+
+2. **Wire plugin** in `src/main.ts`:
+   ```ts
+   import { VueQueryPlugin, QueryClient } from "@tanstack/vue-query";
+   const queryClient = new QueryClient({
+     defaultOptions: { queries: { staleTime: 1000 * 60 * 5, retry: 1 } },
+   });
+   app.use(VueQueryPlugin, { queryClient });
+   ```
+
+3. **Define query keys** in `src/queries/keys.ts`:
+   ```ts
+   export const queryKeys = {
+     photos: () => ["photos"] as const,
+     shots: () => ["shots"] as const,
+     slides: () => ["slides"] as const,
+     videos: () => ["videos"] as const,
+     contacts: () => ["contacts"] as const,
+     categories: () => ["categories"] as const,
+   };
+   ```
+
+4. **Create domain composables** in `src/composables/` (one per resource):
+   ```ts
+   // src/composables/usePhotos.ts
+   import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
+   import { queryKeys } from "@/queries/keys";
+   import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+   import type { Photo } from "@/models";
+
+   const PhotosRepo = RepositoryFactory.get("photos");
+
+   export function usePhotosQuery() {
+     return useQuery<Photo[]>({
+       queryKey: queryKeys.photos(),
+       queryFn: () => PhotosRepo.get().then((r) => r.data),
+     });
+   }
+
+   export function useDeletePhoto() {
+     const qc = useQueryClient();
+     return useMutation({
+       mutationFn: (id: number) => PhotosRepo.delete(id),
+       onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.photos() }),
+     });
+   }
+   ```
+   Repeat for `useShots`, `useSlides`, `useVideos`, `useContacts`, `useCategories`.
+
+5. **Typed repository query functions** — keep `src/repositories/` files as thin axios wrappers.
+   Add return types once domain models exist (Phase 7):
+   ```ts
+   get(): Promise<AxiosResponse<Photo[]>>
+   ```
+
+6. **Update consuming components** — replace store calls with composable calls:
+   ```ts
+   // Before (Pinia)
+   const photosStore = usePhotosStore();
+   const photos = computed(() => photosStore.photos);
+   onMounted(() => { if (!photos.value) photosStore.getPhotos(); });
+
+   // After (TanStack Query)
+   const { data: photos, isPending, isError } = usePhotosQuery();
+   ```
+   Files to update: all dashboard views + public views that called store fetch actions.
+
+7. **Delete server-state Pinia stores**:
+   - `src/stores/photos.ts` → delete
+   - `src/stores/shots.ts` → delete
+   - `src/stores/slides.ts` → delete
+   - `src/stores/videos.ts` → delete
+   - `src/stores/general.ts` → delete (theme extracted to `useContacts` query + local computed)
+
+8. **Mutation pattern for dashboard CRUD**:
+   ```ts
+   // dashboard/Photos.vue
+   const { mutate: deletePhoto } = useDeletePhoto();
+   // template: @click="deletePhoto(item.id)"
+   ```
+   Remove all manual `isLoading`/`isSuccess`/`serverError` refs — use `isPending`/`isSuccess`/`error` from `useMutation`.
+
+9. **Auth stays in Pinia** — `useAuthStore` manages tokens/session (client state). Auth API calls
+   go through `AuthService` directly, not through TanStack Query.
+
+### Exit criteria
+
+- `@tanstack/vue-query` installed; `VueQueryPlugin` registered in `main.ts`
+- `src/queries/keys.ts` exists with all resource keys
+- `src/composables/use{Photos,Shots,Slides,Videos,Contacts,Categories}.ts` created
+- All 5 server-state Pinia stores deleted; `useAuthStore` untouched
+- All consuming components updated (no remaining `usePhotosStore`, `useShotsStore`, etc. imports)
+- Refresh buttons use `queryClient.invalidateQueries` instead of store action calls
+- Spiner shown via `isPending` from query, not manual `isLoading` ref
 
 ---
 
-## Phase 7 — QA, polish, ship (≈1–2 days)
+## Phase 7 — Type tightening (≈2 days) ✅ DONE
+
+1. ✅ **Domain models** — `src/models/index.ts` created with `User`, `Photo` (alias `PhotoFile`), `PhotoCollection`, `Shot`, `Slide`, `SlideType`, `Work`, `WorkVideos`, `Contact`, `Category`. Replaced scattered local types in `PhotoPreview`, `PhotosGrid`, `PhotosGridShots`, `PhotosPreviewGrid`, `WorksGrid`, `Slide`, `Slides`.
+2. ✅ **Typed repositories** with axios generics. All 7 repo files now return `Promise<AxiosResponse<T>>` keyed on domain models. `RepositoryFactory` rewritten as generic `get<K>(name)` for type-safe lookup.
+3. ✅ **Typed composables** — all `useQuery`/`useMutation` generics now use domain models instead of `Record<string, unknown>`. `useVideoQuery` accepts `MaybeRefOrGetter` for reactive IDs.
+4. ✅ **Cleanup** — deleted `src/models/user.js`, `src/helper/interfaces.ts` (IUser → User), `src/utils/message.plugin.ts` (Vue 2 plugin, unused after Phase 2).
+5. ✅ **Typed legacy services/helpers** — `services/auth.service.ts`, `services/storage.service.ts` (generic `get<T>()`), `helper/index.ts` (all implicit `any` removed), `repositories/Repository.ts` (axios interceptors typed with `AxiosError` + `RetryRequestConfig`).
+6. ✅ **Component consumers updated** — all 20+ views/components stripped of `Record<string, unknown>` casts; refs that hold a single edit/preview entity now use `T | undefined` (not `T | null`) to match child prop optionality.
+7. ✅ **`useNotify` fix** — `type: 3` → `type: "filled"` (correct `NotifyType` enum from simple-notify).
+8. ✅ Flipped `tsconfig.json` `noImplicitAny: true`. Installed `@types/lodash`; widened `PhotosGrid` emit ids to `number | undefined` to match `Photo.id` optionality.
+9. ✅ Deleted `src/shims-tsx.d.ts` (Vue 2 JSX globals); `src/shims-vue.d.ts` already Vue 3 (`DefineComponent`).
+10. ✅ Installed `@types/node` and added `"node"` to `tsconfig.types` — resolves `path`/`__dirname` in vite.config.
+11. ✅ **Build verification:** `npx vue-tsc --noEmit` clean; `npm run build` green (391 modules, ~1.25s). Incidentally fixed two Vite 5 build blockers: moved `public/index.html` → root (Vite convention), updated `simple-notify` CSS import path (`.min.css` → `.css` per current package layout).
+
+### Exit criteria
+
+- `src/models/index.ts` is the single source of truth for domain types — no local duplicates in components
+- All repositories return `Promise<AxiosResponse<DomainType>>`; no `any` in repo signatures
+- `npx vue-tsc --noEmit` clean (or only documented `@ts-expect-error TODO(types):` remaining)
+- `noImplicitAny: true` enabled
+- Legacy artifacts removed: `models/user.js`, `helper/interfaces.ts`, `utils/message.plugin.ts`, `shims-tsx.d.ts`
+
+---
+
+## Phase 8 — QA, polish, ship (≈1–2 days) ⬜ TODO
 
 - Manual smoke (against `packages/backend` running locally):
   - Public site: each route renders, navigation, photo grids, lightbox, video player
@@ -257,9 +352,10 @@ Delete `src/store/` after all consumers are converted.
 | 3 — Dep replacements              | 3–4                    |
 | 4 — Component migration (46 SFCs) | 5–7                    |
 | 5 — Pinia stores                  | 1–2 (overlaps Phase 4) |
-| 6 — Type tightening               | 2                      |
-| 7 — QA & ship                     | 1–2                    |
-| **Total**                         | **~3 weeks solo**      |
+| 6 — TanStack Query                | 2–3                    |
+| 7 — Type tightening               | 2                      |
+| 8 — QA & ship                     | 1–2                    |
+| **Total**                         | **~3.5 weeks solo**    |
 
 ## Risk register
 
@@ -271,6 +367,8 @@ Delete `src/store/` after all consumers are converted.
 | Vite alias mismatch with TS path aliases                              | Keep `tsconfig.json` `paths` and `vite.config.ts` `resolve.alias` in sync. |
 | PWA behavior regression                                               | Compare manifest + SW output pre/post.                                     |
 | Dashboard editor (`vue2-editor`) data shape differs from Tiptap       | Wrapper component to isolate; convert stored HTML on read if needed.       |
+| TanStack Query stale-time tuning                                      | Start with 5 min staleTime; adjust per resource after smoke testing.        |
+| Auth token refresh races with parallel queries                        | Axios interceptor already handles 401 retry — TQ retries on top are redundant; set `retry: 0` for auth-gated queries or disable TQ retry for 401. |
 
 ## Out of scope (explicitly)
 

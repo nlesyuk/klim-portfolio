@@ -1,27 +1,22 @@
 <template>
-  <component :is="component"></component>
+  <component :is="component" />
 </template>
 
-<script>
-import CinematogapherMain from "./CinematogapherMain.vue";
-import PhotographerMain from "./PhotographerMain.vue";
+<script setup lang="ts">
+import { computed, defineAsyncComponent } from "vue";
 import { domain } from "@/helper/constants";
 
-export default {
-  name: "Main",
-  components: {
-    CinematogapherMain,
-    PhotographerMain
-  },
-  computed: {
-    component() {
-      const config = {
-        "klimstepan.com": "CinematogapherMain",
-        "derzhanovska.com": "PhotographerMain"
-      };
+const CinematogapherMain = defineAsyncComponent(
+  () => import("./CinematogapherMain.vue"),
+);
+const PhotographerMain = defineAsyncComponent(
+  () => import("./PhotographerMain.vue"),
+);
 
-      return config[domain] || "CinematogapherMain";
-    }
-  }
+const config: Record<string, ReturnType<typeof defineAsyncComponent>> = {
+  "klimstepan.com": CinematogapherMain,
+  "derzhanovska.com": PhotographerMain,
 };
+
+const component = computed(() => config[domain] ?? CinematogapherMain);
 </script>

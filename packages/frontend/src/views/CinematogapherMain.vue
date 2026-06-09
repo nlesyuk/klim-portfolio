@@ -1,10 +1,7 @@
 <template>
   <div class="home">
     <Slider />
-    <WorksGrid
-      v-if="allVideos && allVideos.length"
-      :works="allVideos"
-    ></WorksGrid>
+    <WorksGrid v-if="allVideos && allVideos.length" :works="allVideos" />
     <p
       v-else-if="allVideos && allVideos.length === 0"
       class="home__empty-category"
@@ -15,46 +12,27 @@
   </div>
 </template>
 
-<script>
-import WorksGrid from "../components/WorksGrid";
-import Slider from "./Slider";
-import { mapActions, mapState } from "vuex";
-import { setTitle } from "@/helper/";
+<script setup lang="ts">
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import WorksGrid from "@/components/WorksGrid.vue";
+import Slider from "@/views/Slider.vue";
+import Spiner from "@/components/Spiner.vue";
+import { useVideosQuery } from "@/composables/useVideos";
+import { setTitle } from "@/helper";
 
-export default {
-  name: "Works",
-  components: {
-    WorksGrid,
-    Slider
-  },
-  computed: {
-    ...mapState({
-      videos: state => state.videos.videos
-    }),
-    isMobile() {
-      return window.innerWidth < 992;
-    },
-    allVideos() {
-      if (this.$route.name === "works-commercial") {
-        if (!this.videos) {
-          return;
-        }
-        return this.videos.filter(video =>
-          video?.category?.includes("commerce")
-        );
-      }
-      return this.videos;
-    }
-  },
-  methods: {
-    ...mapActions(["getAllVideos"])
-  },
-  mounted() {
-    setTitle("Works");
+const route = useRoute();
+const { data } = useVideosQuery();
 
-    if (!this.videos) {
-      this.getAllVideos();
-    }
+const allVideos = computed(() => {
+  if (route.name === "works-commercial") {
+    if (!data.value) return undefined;
+    return data.value.filter((v) => v.category?.includes("commerce"));
   }
-};
+  return data.value;
+});
+
+onMounted(() => {
+  setTitle("Works");
+});
 </script>

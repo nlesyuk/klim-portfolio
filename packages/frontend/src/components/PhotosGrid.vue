@@ -1,17 +1,17 @@
 <template>
   <div>
-    <template v-if="chunkedImages && chunkedImages.vertical">
+    <template v-if="chunkedImages?.vertical">
       <div
-        class="grid-container"
         v-for="(arrImages, idx) in chunkedImages.vertical"
         :key="idx"
+        class="grid-container"
       >
         <div
           class="grid-type grid-type--oneline"
           :class="{
             'grid-type--oneline-1': arrImages.length === 1,
             'grid-type--oneline-2': arrImages.length === 2,
-            'grid-type--oneline-3': arrImages.length === 3
+            'grid-type--oneline-3': arrImages.length === 3,
           }"
         >
           <figure
@@ -19,24 +19,29 @@
             :key="index"
             class="grid__item"
           >
-            <ul class="dashboard__list" v-if="isManage">
+            <ul v-if="isManage" class="dashboard__list">
               <li>
-                <span class="dashboard__badge badge-green m0">
-                  id: {{ image.id }}
-                </span>
+                <span class="dashboard__badge badge-green m0"
+                  >id: {{ image.id }}</span
+                >
               </li>
               <li>
-                <button type="button" @click.prevent="remove(image.id)">
+                <button
+                  type="button"
+                  @click.prevent="emit('removeImg', image.id)"
+                >
                   Remove
                 </button>
               </li>
               <li>
-                <button type="button" @click.prevent="edit(image.id)">
+                <button
+                  type="button"
+                  @click.prevent="emit('editImg', image.id)"
+                >
                   Edit
                 </button>
               </li>
             </ul>
-
             <button
               v-if="isShots"
               type="button"
@@ -45,19 +50,18 @@
             >
               MORE
             </button>
-
-            <a class="grid__lightbox" :href="image.src" ref="lightbox">
+            <a ref="lightboxRefs" class="grid__lightbox" :href="image.src">
               <img :src="image.src" alt="" class="grid__img" loading="lazy" />
             </a>
           </figure>
         </div>
       </div>
     </template>
-    <template v-if="chunkedImages && chunkedImages.horizontal">
+    <template v-if="chunkedImages?.horizontal">
       <div
-        class="grid-container"
         v-for="(arrImages, idx) in chunkedImages.horizontal"
         :key="`0${idx}`"
+        class="grid-container"
       >
         <div
           class="grid-type"
@@ -66,7 +70,7 @@
             'grid-type--big-on-right':
               arrImages.length === 3 && !((idx + 1) % 2),
             'grid-type--two': arrImages.length === 2,
-            'grid-type--one': arrImages.length === 1
+            'grid-type--one': arrImages.length === 1,
           }"
         >
           <figure
@@ -74,24 +78,29 @@
             :key="index"
             class="grid__item"
           >
-            <ul class="dashboard__list" slot="default" v-if="isManage">
+            <ul v-if="isManage" class="dashboard__list">
               <li>
-                <span class="dashboard__badge badge-green m0">
-                  id: {{ image.id }}
-                </span>
+                <span class="dashboard__badge badge-green m0"
+                  >id: {{ image.id }}</span
+                >
               </li>
               <li>
-                <button type="button" @click.prevent="remove(image.id)">
+                <button
+                  type="button"
+                  @click.prevent="emit('removeImg', image.id)"
+                >
                   Remove
                 </button>
               </li>
               <li>
-                <button type="button" @click.prevent="edit(image.id)">
+                <button
+                  type="button"
+                  @click.prevent="emit('editImg', image.id)"
+                >
                   Edit
                 </button>
               </li>
             </ul>
-
             <button
               v-if="isShots"
               type="button"
@@ -100,8 +109,7 @@
             >
               MORE
             </button>
-
-            <a class="grid__lightbox" :href="image.src" ref="lightbox">
+            <a ref="lightboxRefs" class="grid__lightbox" :href="image.src">
               <img :src="image.src" alt="" class="grid__img" loading="lazy" />
             </a>
           </figure>
@@ -111,122 +119,76 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
 import { chunk } from "lodash";
+import SimpleLightbox from "simple-lightbox";
+import "simple-lightbox/dist/simpleLightbox.min.css";
+import type { Photo } from "@/models";
 
-export default {
-  props: {
-    images: {
-      type: Array,
-      required: true
-    },
-    isManage: {
-      type: Boolean,
-      default: false
-    },
-    isShots: {
-      type: Boolean,
-      default: false
-    },
-    isWorks: {
-      type: Boolean,
-      default: false
-    }
-  },
-  data() {
-    return {
-      lightbox: null
-    };
-  },
-  watch: {
-    images(v) {
-      if (v.length) {
-        this.uninstallLightBox();
-        this.installLightBox();
-      }
-    }
-  },
-  methods: {
-    installLightBox() {
-      this.lightbox = new SimpleLightbox({
-        // elements: ".grid-container .grid__lightbox",
-        elements: this.$refs.lightbox
-      });
-    },
-    uninstallLightBox() {
-      if (this.lightbox) {
-        this.lightbox.destroy();
-        this.lightbox = null;
-      }
-    },
-    goTo(item) {
-      if (item?.hasOwnProperty("photoId")) {
-        this.$router.push({
-          name: "photo",
-          params: { id: item.photoId }
-        });
-      }
-      if (item?.hasOwnProperty("workId")) {
-        this.$router.push({
-          name: "work",
-          params: { id: item.workId }
-        });
-      }
-    },
-    remove(id) {
-      this.$emit("removeImg", id);
-    },
-    edit(id) {
-      this.$emit("editImg", id);
-    }
-  },
-  computed: {
-    chunkedImages() {
-      if (!this.images.length) return;
+const props = withDefaults(
+  defineProps<{
+    images: Photo[];
+    isManage?: boolean;
+    isShots?: boolean;
+    isWorks?: boolean;
+  }>(),
+  { isManage: false, isShots: false, isWorks: false },
+);
 
-      const sortOrder = (f, s) =>
-        f?.order && s?.order ? f.order - s.order : 0;
+const emit = defineEmits<{
+  removeImg: [id: number | undefined];
+  editImg: [id: number | undefined];
+}>();
 
-      // type of render grid 1: vertical, 2: horizontal 3: big on left, big on right
-      // if (this.isShots) {
-      //   const str = JSON.stringify(this.images);
-      //   const arr = JSON.parse(str).sort(sortOrder);
-      //   return {
-      //     vartical: chunk(arr, 3)
-      //   };
-      // }
+const router = useRouter();
+const lightboxRefs = ref<HTMLElement[]>([]);
+const lightbox = ref<InstanceType<typeof SimpleLightbox> | null>(null);
 
-      if (this.isWorks) {
-        const str = JSON.stringify(this.images);
-        const arr = JSON.parse(str).sort(sortOrder);
-        return {
-          horizontal: chunk(arr, 3)
-        };
-      }
-
-      let vertivalImages = this.images.filter(v =>
-        v?.format ? v.format === "vertical" : true
-      );
-      vertivalImages = vertivalImages.sort(sortOrder);
-
-      let horizontalImages = this.images.filter(v =>
-        v?.format ? v.format === "horizontal" : true
-      );
-      horizontalImages = horizontalImages.sort(sortOrder);
-
-      return {
-        vertical: chunk(vertivalImages, 3),
-        horizontal: chunk(horizontalImages, 3)
-      };
-    }
-  },
-  mounted() {
-    this.$nextTick(() => {
-      this.installLightBox();
-    });
-  },
-  destroyed() {
-    this.uninstallLightBox();
+function installLightBox() {
+  lightbox.value = new SimpleLightbox({ elements: lightboxRefs.value });
+}
+function uninstallLightBox() {
+  if (lightbox.value) {
+    lightbox.value.destroy();
+    lightbox.value = null;
   }
-};
+}
+
+function goTo(item: Photo) {
+  if (Object.prototype.hasOwnProperty.call(item, "photoId"))
+    router.push({ name: "photo", params: { id: item.photoId } });
+  else if (Object.prototype.hasOwnProperty.call(item, "workId"))
+    router.push({ name: "work", params: { id: item.workId } });
+}
+
+const chunkedImages = computed(() => {
+  if (!props.images.length) return null;
+  const sortOrder = (f: Photo, s: Photo) =>
+    f?.order && s?.order ? f.order - s.order : 0;
+  if (props.isWorks) {
+    return { horizontal: chunk([...props.images].sort(sortOrder), 3) };
+  }
+  const verticals = [...props.images]
+    .filter((v) => !v.format || v.format === "vertical")
+    .sort(sortOrder);
+  const horizontals = [...props.images]
+    .filter((v) => !v.format || v.format === "horizontal")
+    .sort(sortOrder);
+  return { vertical: chunk(verticals, 3), horizontal: chunk(horizontals, 3) };
+});
+
+watch(
+  () => props.images,
+  (v) => {
+    if (v.length) {
+      uninstallLightBox();
+      nextTick(installLightBox);
+    }
+  },
+);
+
+onMounted(() => nextTick(installLightBox));
+onUnmounted(uninstallLightBox);
 </script>

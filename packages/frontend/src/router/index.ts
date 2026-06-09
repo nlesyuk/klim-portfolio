@@ -1,142 +1,124 @@
-import Vue from "vue";
-import VueRouter from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 import Main from "../views/Main.vue";
-import store from "../store";
+import { useAuthStore } from "@/stores/auth";
 
-Vue.use(VueRouter);
-
-const router = new VueRouter({
-  mode: "history",
-  base: process.env.BASE_URL,
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: "/",
-      name: "works",
-      component: Main
-    },
+    { path: "/", name: "works", component: Main },
     {
       path: "/works-commercial",
       name: "works-commercial",
-      component: () => import("../views/Main.vue")
+      component: () => import("../views/Main.vue"),
     },
     {
       path: "/work/:id",
       name: "work",
-      component: () => import("../views/Work.vue")
+      component: () => import("../views/Work.vue"),
     },
     {
       path: "/shots",
       name: "shots",
-      component: () => import("../views/Shots.vue")
+      component: () => import("../views/Shots.vue"),
     },
     {
       path: "/photo",
       name: "photo",
-      component: () => import("../views/Photos.vue"), // 1
+      component: () => import("../views/Photos.vue"),
       children: [
         {
           path: "commerce",
           name: "commerce",
-          component: () => import("../views/Photos.vue")
-        }
-      ]
+          component: () => import("../views/Photos.vue"),
+        },
+      ],
     },
     {
       path: "/photo/:id",
       name: "collage",
-      component: () => import("../views/Photo.vue")
+      component: () => import("../views/Photo.vue"),
     },
     {
       path: "/personal",
       name: "personal",
-      component: () => import("../views/Photos.vue") // 2
+      component: () => import("../views/Photos.vue"),
     },
     {
       path: "/portfolio",
       name: "portfolio",
-      component: () => import("../views/Portfolio.vue")
+      component: () => import("../views/Portfolio.vue"),
     },
     {
       path: "/contact",
       name: "contact",
-      component: () => import("../views/Contact.vue")
+      component: () => import("../views/Contact.vue"),
     },
     {
       path: "/calendar",
       name: "calendar",
-      component: () => import("../views/Calendar.vue")
+      component: () => import("../views/Calendar.vue"),
     },
     {
       path: "/login",
       name: "login",
-      meta: {
-        isProtected: true
-      },
-      component: () => import("../views/Login.vue")
+      meta: { isProtected: true },
+      component: () => import("../views/Login.vue"),
     },
     {
       path: "/dashboard",
       name: "dashboard",
-      meta: {
-        isProtected: true
-      },
+      meta: { isProtected: true },
       component: () => import("../views/dashboard/Dashboard.vue"),
       children: [
         {
           path: "slider",
           name: "dasboard-slider",
           meta: { isProtected: true },
-          component: () => import("../views/dashboard/Slider.vue")
+          component: () => import("../views/dashboard/Slider.vue"),
         },
         {
           path: "works",
           name: "dasboard-works",
           meta: { isProtected: true },
-          component: () => import("../views/dashboard/Works.vue")
+          component: () => import("../views/dashboard/Works.vue"),
         },
         {
           path: "shots",
           name: "dasboard-shots",
           meta: { isProtected: true },
-          component: () => import("../views/dashboard/Shots.vue")
+          component: () => import("../views/dashboard/Shots.vue"),
         },
         {
           path: "photos",
           name: "dasboard-photos",
           meta: { isProtected: true },
-          component: () => import("../views/dashboard/Photos.vue")
+          component: () => import("../views/dashboard/Photos.vue"),
         },
         {
           path: "contacts",
           name: "dasboard-contacts",
           meta: { isProtected: true },
-          component: () => import("../views/dashboard/Contacts.vue")
-        }
-      ]
+          component: () => import("../views/dashboard/Contacts.vue"),
+        },
+      ],
     },
     {
-      path: "*",
+      path: "/:pathMatch(.*)*",
       name: "not-found",
-      component: () => import("../views/NotFound.vue")
-    }
-  ]
+      component: () => import("../views/NotFound.vue"),
+    },
+  ],
 });
 
-router.beforeEach((to, from, next) => {
-  // 1
-  const isLoggedIn = store.getters["auth/loggedIn"];
-  // 2
+router.beforeEach((to) => {
+  const authStore = useAuthStore();
   const privatePages = ["dashboard"];
   const isAuthRequired = `${to.path}`
     .split("/")
-    .some(v => privatePages.includes(v));
-
-  // trying to access a restricted page + not logged in
-  // redirect to login page
-  if (isAuthRequired && !isLoggedIn) {
-    next("/login");
+    .some((v) => privatePages.includes(v));
+  if (isAuthRequired && !authStore.loggedIn) {
+    return "/login";
   }
-  next();
 });
 
 export default router;

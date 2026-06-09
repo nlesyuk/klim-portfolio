@@ -1,94 +1,91 @@
 import { RepositoryFactory } from "../repositories/RepositoryFactory";
-const AuthRepository = RepositoryFactory.get("auth");
 import StorageService from "./storage.service";
-import { IUser } from "@/helper/interfaces";
+import type { User } from "@/models";
+
+const AuthRepository = RepositoryFactory.get("auth");
 
 export const userStorageService = new StorageService("user");
 
-class AuthService {
-  static instance;
+interface ErrorWithResponse {
+  response?: { data?: { message?: string } };
+  message?: string;
+}
 
-  public static getInstance() {
+class AuthService {
+  static instance: AuthService | null = null;
+
+  public static getInstance(): AuthService {
     if (!AuthService.instance) {
       AuthService.instance = new AuthService();
     }
     return AuthService.instance;
   }
 
-  async login(userCredentials) {
+  async login(userCredentials: {
+    username: string;
+    password: string;
+  }): Promise<User> {
     try {
       const res = await AuthRepository.signin(userCredentials);
-      const user = res?.data;
+      const user = res?.data as User;
       if (user?.accessToken) {
-        userStorageService.set(user); // save User data client storage
+        userStorageService.set(user);
       }
-
-      return Promise.resolve(user);
+      return user;
     } catch (error) {
       console.error(error);
-      let msg = error?.response?.data?.message
-        ? error?.response?.data?.message
-        : error?.message;
-      if (!msg) {
-        msg = "Unknow an Error";
-      }
+      const e = error as ErrorWithResponse;
+      const msg = e?.response?.data?.message ?? e?.message ?? "Unknown error";
       return Promise.reject(msg);
     }
   }
 
-  async logout(userId: number) {
+  async logout(userId: number): Promise<boolean> {
     try {
       if (userId) {
         await AuthRepository.signout(userId);
       }
       userStorageService.remove();
-      return Promise.resolve(true);
+      return true;
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
     }
   }
 
-  async signup(user) {
+  async signup(user: {
+    username: string;
+    email: string;
+    password: string;
+  }): Promise<boolean> {
     try {
       if (user) {
         await AuthRepository.signup(user);
       }
-      return Promise.resolve(true);
+      return true;
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
     }
   }
 
-  async refreshToken(token) {
+  async refreshToken(token: string) {
     try {
-      if (token) {
-        const res = await AuthRepository.refreshToken(token);
-        const user: IUser | null = userStorageService.get();
-        userStorageService.set({
-          ...user
-        });
-        user?.accessToken;
-
-        return Promise.resolve(res);
-      }
-      throw new Error("Token doesn't provided");
+      if (!token) throw new Error("Token doesn't provided");
+      const res = await AuthRepository.refreshToken(token);
+      const user = userStorageService.get() as User | null;
+      userStorageService.set({ ...user });
+      return res;
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
     }
   }
 
-  getAccessTokenFromStorage() {
-    const user: IUser | null = userStorageService.get();
+  getAccessTokenFromStorage(): string | undefined {
+    const user = userStorageService.get() as User | null;
     return user?.accessToken;
   }
 }
 
 export default AuthService.getInstance();
-
-// Автологин выглядит примерно так. Вы делаете запрос с фронта, он падает
-// потому что протух токен, ловим ошибку по логину и с рефреш токеном идём на
-// сервер за получением нового. Если рефреш не протух вы перелогинетесь иначе
-// придётся вводить все заново

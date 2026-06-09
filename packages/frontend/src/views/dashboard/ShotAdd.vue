@@ -4,71 +4,61 @@
       <div class="dashboard__label">
         <span>Please upload shots</span>
         <input
+          v-show="selectedImages && !selectedImages.length"
+          ref="filesInput"
           type="file"
           @change="getFiles"
-          ref="files"
-          v-show="selectedImages && !selectedImages.length"
         />
         <ul class="dashboard__list-imgs">
           <li v-for="(file, idx) in selectedImages" :key="idx">
             <span class="dashboard__badge badge-yellow">{{ idx + 1 }}</span>
-
             <button type="button" @click="removeSelectedImage(file.url)">
               delete
             </button>
-
             <div v-if="file.workId" class="dashboard__badge badge-green">
               Linked to post-id: {{ file.workId }}
             </div>
-
             <img :src="file.url" alt="preview" />
-
             <div class="dashboard__select">
               <select v-model="file.workId">
                 <option disabled selected value="null">
                   Please linking the Shot to the Work
                 </option>
-                <option
-                  v-for="(item, idx) of videos"
-                  :key="idx"
-                  :value="item.id"
-                >
+                <option v-for="(item, i) of videos" :key="i" :value="item.id">
                   {{ item.title }}
                 </option>
               </select>
             </div>
-
             <h3 class="dashboard__text">
               Please choose related category(ies):
             </h3>
             <label
-              class="dashboard__label mb0 dashboard__label--inline"
               v-for="category in categories"
               :key="category"
+              class="dashboard__label mb0 dashboard__label--inline"
             >
               <input
+                v-model="file.categories"
                 type="checkbox"
                 :value="category"
-                v-model="file.categories"
               />
               <span>{{ category }}</span>
             </label>
-
             <label class="dashboard__label mb0">
               <input
+                v-model="file.format"
                 type="radio"
                 :name="`format${idx}`"
                 value="vertical"
-                v-model="file.format"
               />
               <span class="inline">vertical</span>
             </label>
             <label class="dashboard__label">
               <input
+                v-model="file.format"
                 type="radio"
                 :name="`format${idx}`"
                 value="horizontal"
-                v-model="file.format"
               />
               <span class="inline">horizontal</span>
             </label>
@@ -92,108 +82,108 @@
           Reset
         </button>
         <div class="dashboard__status">
-          <div class="dashboard__status--success" v-if="isSuccess">
+          <div v-if="isSuccess" class="dashboard__status--success">
             Shot was added
           </div>
-          <div class="dashboard__status--fail" v-if="serverError">
+          <div v-if="serverError" class="dashboard__status--fail">
             Server error: {{ serverError }}
           </div>
         </div>
-        <Spiner v-if="isLoading" :isCenter="false" />
+        <Spiner v-if="isLoading" :is-center="false" />
       </div>
     </form>
   </section>
 </template>
 
-<script>
-import { mapState, mapActions } from "vuex";
-import { getHeightAndWidthFromDataUrl } from "../../helper";
-import { RepositoryFactory } from "Repositories/RepositoryFactory.ts";
-const ShotsRepository = RepositoryFactory.get("shots");
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import Spiner from "@/components/Spiner.vue";
+import { useCreateShot, shotCategories } from "@/composables/useShots";
+import { useVideosQuery } from "@/composables/useVideos";
+import { getHeightAndWidthFromDataUrl } from "@/helper";
 
-export default {
-  data() {
-    return {
-      isLoading: false,
-      isSuccess: false,
-      serverError: null,
-      selectedImages: []
-    };
-  },
-  computed: {
-    ...mapState({
-      videos: state => state.videos.videos, // for drop down list in new added shot
-      categories: state => state.shots.categories
-    }),
-    isAllowCreateShots() {
-      if (!this.selectedImages?.length) {
-        return false;
-      }
-      return this.selectedImages.every(
-        file => file.workId && file.categories.length > 0
-      );
-    }
-  },
-  methods: {
-    ...mapActions(["getAllVideos"]),
-    getFiles() {
-      const files = this.$refs.files.files;
-      Array.from(files).forEach(file => {
-        getHeightAndWidthFromDataUrl(file).then(resol => {
-          const format = resol.height > resol.width ? "vertical" : "horizontal";
-          this.selectedImages.push({
-            file: file,
-            photoOriginalName: file.name,
-            workId: null,
-            categories: ["all"],
-            url: URL.createObjectURL(file),
-            format
-          });
-        });
+const { mutateAsync: createShot } = useCreateShot();
+const { data: videosData } = useVideosQuery();
+
+interface ShotDraft {
+  file: File;
+  photoOriginalName: string;
+  workId: number | null;
+  categories: string[];
+  url: string;
+  format: string;
+}
+
+const filesInput = ref<HTMLInputElement | null>(null);
+const isLoading = ref(false);
+const isSuccess = ref(false);
+const serverError = ref<string | null>(null);
+const selectedImages = ref<ShotDraft[]>([]);
+
+const videos = computed(() => videosData.value);
+const categories = computed(() => shotCategories);
+const isAllowCreateShots = computed(() => {
+  if (!selectedImages.value.length) return false;
+  return selectedImages.value.every(
+    (file) => file.workId && file.categories.length > 0,
+  );
+});
+
+function getFiles() {
+  const files = filesInput.value?.files;
+  if (!files) return;
+  Array.from(files).forEach((file) => {
+    getHeightAndWidthFromDataUrl(file).then((resol) => {
+      const format = resol.height > resol.width ? "vertical" : "horizontal";
+      selectedImages.value.push({
+        file,
+        photoOriginalName: file.name,
+        workId: null,
+        categories: ["all"],
+        url: URL.createObjectURL(file),
+        format,
       });
-    },
-    removeSelectedImage(url) {
-      this.selectedImages = this.selectedImages.filter(v => v.url != url);
-    },
-    reset() {
-      this.selectedImages = [];
-    },
-    async submit() {
-      try {
-        this.isLoading = true;
+    });
+  });
+}
 
-        const formData = new FormData();
+function removeSelectedImage(url: string) {
+  selectedImages.value = selectedImages.value.filter((v) => v.url !== url);
+}
 
-        for (const item of this.selectedImages) {
-          formData.append("photos[]", item.file);
-        }
-        const images = JSON.parse(JSON.stringify(this.selectedImages));
-        const shots = Array.from(images).map(v => {
-          delete v.file;
-          delete v.url;
-          return { ...v };
-        });
-        formData.append("shots", JSON.stringify(shots));
+function reset() {
+  selectedImages.value = [];
+}
 
-        await ShotsRepository.create(formData);
-        this.isSuccess = true;
-        this.reset();
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
-        this.serverError = e.response.statusText;
-      } finally {
-        this.isLoading = false;
-        setTimeout(() => {
-          this.isSuccess = false;
-        }, 20 * 1000);
-      }
-    }
-  },
-  created() {
-    if (!this.videos) {
-      this.getAllVideos();
-    }
+async function submit() {
+  try {
+    isLoading.value = true;
+    const formData = new FormData();
+    for (const item of selectedImages.value)
+      formData.append("photos[]", item.file);
+    const images = JSON.parse(
+      JSON.stringify(selectedImages.value),
+    ) as ShotDraft[];
+    const shots = images.map((v) => {
+      const obj: Partial<ShotDraft> = { ...v };
+      delete obj.file;
+      delete obj.url;
+      return obj;
+    });
+    formData.append("shots", JSON.stringify(shots));
+    await createShot(formData);
+    isSuccess.value = true;
+    reset();
+  } catch (e) {
+    console.error(e);
+    serverError.value =
+      (e as { response?: { statusText?: string } })?.response?.statusText ??
+      null;
+  } finally {
+    isLoading.value = false;
+    setTimeout(() => {
+      isSuccess.value = false;
+    }, 20_000);
   }
-};
+}
 </script>

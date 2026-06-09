@@ -7,11 +7,9 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { onMounted } from "vue";
 import { setTitle } from "@/helper";
-export default {
-  mounted() {
-    setTitle("Not found");
-  }
-};
+
+onMounted(() => setTitle("Not found"));
 </script>
