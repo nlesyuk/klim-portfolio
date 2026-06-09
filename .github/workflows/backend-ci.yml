@@ -1,0 +1,22 @@
+name: backend-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace=packages/shared
+      - run: npm run lint --workspace=packages/backend
+      - run: npm run typecheck --workspace=packages/backend
+      - run: npm run test --workspace=packages/backend
+      - run: npm run build --workspace=packages/backend

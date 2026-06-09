@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: klim
+      POSTGRES_PASSWORD: klim
+      POSTGRES_DB: klim
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klim"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8090
+      DATABASE_URL: postgres://klim:klim@postgres:5432/klim
+      SECRET: change-me-in-prod
+      CORS_ALLOWED_ORIGINS: http://localhost:8080
+      # Uncomment to use MinIO object storage instead of local disk:
+      # S3_ENDPOINT: http://minio:9000
+      # S3_BUCKET: klim-uploads
+      # S3_ACCESS_KEY_ID: minioadmin
+      # S3_SECRET_ACCESS_KEY: minioadmin
+      # S3_PUBLIC_BASE_URL: http://localhost:9000/klim-uploads
+    ports:
+      - "8090:8090"
+
+volumes:
+  pgdata:
+  miniodata:

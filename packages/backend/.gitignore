@@ -2,6 +2,9 @@
 node_modules
 /dist
 
+# disk-stored uploads (S3 in prod)
+/public/uploads
+
 
 # local env files
 .env.local
